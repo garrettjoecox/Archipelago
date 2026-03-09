@@ -1,0 +1,9 @@
+# Files not needed to generate seeds. Patterns are gitignore-style and add to
+# data/GLOBAL.apignore (which already drops __pycache__, .git, archipelago.json...).
+
+# Unit tests. Never imported during generation.
+/test/
+
+# genlogic code generator. Run offline to regenerate the *.py data files from
+# the 2ship C++ source; the world itself imports none of it.
+/tools/
