@@ -12,10 +12,12 @@ class MM2ShipLocation(Location):
 
 
 # --------------------------------------------------------------------------
-# Stable AP Location IDs
+# AP Location IDs
 #
-# Since Types.h is NOT shipped in the apworld, we assign AP-only IDs here.
-# These MUST remain stable: do not reorder Locations in Enums.py; only append new ones.
+# IDs are the C++ RandoCheckId enum ordinals (Enums.py preserves that order),
+# because the game client static_casts them. Upstream inserts new checks
+# mid-enum, which shifts later IDs — that is fine under the wire contract:
+# the game build and the apworld must always ship from the same 2ship commit.
 # --------------------------------------------------------------------------
 
 base_location_table: dict[Locations, int] = {

@@ -27,6 +27,8 @@ class TestAllShuffles(MM2ShipTestBase):
         "shuffle_snowball_drops": True,
         "shuffle_freestanding_items": True,
         "shuffle_enemy_drops": True,
+        "shuffle_butterflies": True,
+        "shuffle_hive_drops": True,
         "shuffle_cows": True,
         "shuffle_frogs": True,
         "shuffle_shops": True,

@@ -332,6 +332,15 @@ class ShuffleBarrelDrops(Toggle):
     default = 0
 
 
+class ShuffleButterflies(Toggle):
+    """
+    Approaching a swarm of butterflies grants a shuffled check. These swarms
+    grant nothing in the vanilla game, so this purely adds locations.
+    """
+    display_name = "Shuffle Butterflies"
+    default = 0
+
+
 class ShuffleBossRemains(Toggle):
     """
     Shuffle the four Boss Remains into the item pool. When disabled, each boss
@@ -386,6 +395,12 @@ class ShuffleFreestandingItems(Toggle):
 class ShuffleFrogs(Toggle):
     """Returning the five Frog Choir frogs grants shuffled checks."""
     display_name = "Shuffle Frogs"
+    default = 0
+
+
+class ShuffleHiveDrops(Toggle):
+    """Shooting down beehives grants shuffled checks."""
+    display_name = "Shuffle Hive Drops"
     default = 0
 
 
@@ -770,6 +785,8 @@ class MM2ShipOptions(PerGameCommonOptions):
     shuffle_snowball_drops: ShuffleSnowballDrops
     shuffle_tree_drops: ShuffleTreeDrops
     shuffle_enemy_drops: ShuffleEnemyDrops
+    shuffle_butterflies: ShuffleButterflies
+    shuffle_hive_drops: ShuffleHiveDrops
 
     shuffle_boss_remains: ShuffleBossRemains
     shuffle_boss_souls: ShuffleBossSouls
@@ -898,6 +915,8 @@ mm2ship_option_groups = [
         ShuffleSnowballDrops,
         ShuffleTreeDrops,
         ShuffleEnemyDrops,
+        ShuffleButterflies,
+        ShuffleHiveDrops,
     ]),
 
     OptionGroup("Hints", [

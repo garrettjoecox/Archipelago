@@ -488,7 +488,7 @@ class Solver:
 
     @staticmethod
     def _compute_disabled_vanilla(world: "MM2ShipWorld") -> dict[str, str]:
-        from .Enums import Locations
+        from .Enums import Items, Locations
         from .LocationFilter import location_should_be_included
         from .VanillaItems import vanilla_items
 
@@ -499,7 +499,9 @@ class Solver:
             if location_should_be_included(world, loc):
                 continue
             vanilla = vanilla_items.get(loc)
-            if vanilla is not None:
+            # NONE ("literally nothing") grants are a no-op in GiveItem.cpp;
+            # skipping them keeps the logic-relevant item set tight.
+            if vanilla is not None and vanilla is not Items.NONE:
                 disabled[f"RC_{loc.name}"] = vanilla.value
         return disabled
 

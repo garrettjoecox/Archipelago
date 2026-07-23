@@ -21,6 +21,8 @@ if TYPE_CHECKING:
 # RCTYPE_SONG, RCTYPE_STRAY_FAIRY, RCTYPE_HEART, RCTYPE_MINIGAME, etc.).
 RCTYPE_OPTION: dict[str, str] = {
     "RCTYPE_BARREL":      "shuffle_barrel_drops",
+    "RCTYPE_BEEHIVE":     "shuffle_hive_drops",
+    "RCTYPE_BUTTERFLY":   "shuffle_butterflies",
     "RCTYPE_COW":         "shuffle_cows",
     "RCTYPE_CRATE":       "shuffle_crate_drops",
     "RCTYPE_ENEMY_DROP":  "shuffle_enemy_drops",

@@ -29,6 +29,8 @@ mm2ship_options_presets: dict[str, dict[str, Any]] = {
         "shuffle_snowball_drops": True,
         "shuffle_tree_drops": True,
         "shuffle_enemy_drops": True,
+        "shuffle_butterflies": True,
+        "shuffle_hive_drops": True,
         "shuffle_boss_remains": True,
         "shuffle_boss_souls": True,
         "shuffle_enemy_souls": True,
