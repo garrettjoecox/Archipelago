@@ -123,8 +123,8 @@ class AccessTrials(Choice):
     """
     What each of the four Moon Trials requires to enter.
 
-    20 Masks: increasing regular-mask counts per trial, like the vanilla moon
-    children (the last trial asks for all 20).
+    20 Masks: increasing regular-mask counts per trial (2, 6, 12, then all 20),
+    like the vanilla moon children.
     Remains: each trial requires its matching Boss Remains.
     Forms: each trial requires its matching transformation mask.
     Open: trials have no requirement.
@@ -202,22 +202,22 @@ class ExcludeCowGrottoGrass(Toggle):
 
 
 class HintsBossRemains(Toggle):
-    """The four boss warps in the dungeon boss rooms hint their shuffled reward."""
+    """The guard recruitment posters around Clock Town list where the Boss Remains are."""
     display_name = "Hints: Boss Remains"
     default = 0
 
 
 class HintsGossipStones(Toggle):
-    """Gossip Stones give hints about the contents of random locations."""
+    """Each Gossip Stone gives a static hint about the contents of a random location."""
     display_name = "Hints: Gossip Stones"
     default = 0
 
 
 class HintsGossipStoneStrength(Range):
     """
-    How strongly gossip stone hints are weighted toward useful, unobtained
-    checks rather than a uniformly random shuffled check. 0 is fully random,
-    100 always picks from the most useful remaining checks.
+    How strongly Gossip Stone hints are weighted toward important items and
+    checks. At 0 every check is equally likely; at 100 the full item/check
+    weighting applies. Only affects the Gossip Stone hints above.
     """
     display_name = "Hints: Gossip Stone Strength"
     range_start = 0
@@ -226,45 +226,57 @@ class HintsGossipStoneStrength(Range):
 
 
 class HintsHookshot(Toggle):
-    """The pirate in the Pirates' Fortress sewers hints where the Hookshot is."""
+    """The Zora in Great Bay Coast, near Pirates' Fortress, hints where the Hookshot is."""
     display_name = "Hints: Hookshot"
     default = 0
 
 
 class HintsOathToOrder(Toggle):
-    """The giants hint where the Oath to Order is."""
+    """
+    Once you meet the Moon access requirements, Skull Kid on the Clock Tower
+    rooftop hints where the Oath to Order is.
+    """
     display_name = "Hints: Oath to Order"
     default = 0
 
 
 class HintsPurchaseable(Toggle):
     """
-    Hints must be paid for before they are revealed.
+    Gossip Stones offer their hint for a rupee cost instead of for free. The
+    price scales from 10 to 250 rupees depending on how many checks remain, and
+    the hint is guaranteed to be a check you have not obtained yet.
     """
     display_name = "Hints: Purchaseable"
     default = 0
 
 
 class HintsSongOfSoaring(Toggle):
-    """The owl statue tablet hints where the Song of Soaring is."""
+    """Hints the location of the Song of Soaring at its vanilla location."""
     display_name = "Hints: Song of Soaring"
     default = 0
 
 
 class HintsSpiderHouses(Toggle):
-    """The Spider House rewards are hinted near their entrances."""
+    """
+    Hint the Spider House rewards. The Swamp Spider House reward is hinted at the
+    man's usual spot inside the Swamp Spider House; the Ocean Spider House reward
+    is hinted in South Clock Town on Day 1, by the man on the scaffolding.
+    """
     display_name = "Hints: Spider Houses"
     default = 0
 
 
 class HintsBankSign(Toggle):
-    """The bank's sign hints at the bank deposit rewards."""
+    """The sign next to the Bank in West Clock Town hints at the bank's Piece of Heart reward."""
     display_name = "Hints: Bank Sign"
     default = 0
 
 
 class HintsTransformations(Toggle):
-    """In-game hints for where the Deku, Goron and Zora masks are."""
+    """
+    The sign near the Business Scrub in South Clock Town reveals where the
+    transformation masks (Deku, Goron, Zora) are. Excludes the Fierce Deity mask.
+    """
     display_name = "Hints: Transformations"
     default = 0
 
@@ -352,8 +364,8 @@ class ShuffleBossRemains(Toggle):
 
 class ShuffleBossSouls(Toggle):
     """
-    Shuffle Boss Souls into the pool. A boss cannot be fought until you have
-    found its soul.
+    Shuffle the five Boss Souls into the pool. A boss does not appear (and so
+    cannot be fought) until you have found its soul.
     """
     display_name = "Shuffle Boss Souls"
     default = 0
@@ -372,15 +384,15 @@ class ShuffleCrateDrops(Toggle):
 
 
 class ShuffleEnemyDrops(Toggle):
-    """Defeating enemies grants shuffled checks."""
+    """Shuffle the first drop from each non-boss enemy into the location pool."""
     display_name = "Shuffle Enemy Drops"
     default = 0
 
 
 class ShuffleEnemySouls(Toggle):
     """
-    Shuffle Enemy Souls into the pool. An enemy type does not spawn until you
-    have found its soul, which can gate the checks behind it.
+    Shuffle Enemy Souls into the pool. Each regular enemy type is immune to
+    damage until you have found its soul, which can gate the checks behind it.
     """
     display_name = "Shuffle Enemy Souls"
     default = 0
@@ -491,7 +503,12 @@ class ShuffleSongInvertedTime(Toggle):
 
 
 class ShuffleSongSaria(Toggle):
-    """Shuffle Saria's Song into the item pool."""
+    """
+    Shuffle Saria's Song into the item pool. Playing it reveals a hint to a
+    reachable, not-yet-found item, preferring your in-game priority-items list
+    and otherwise a random reachable major item or mask. It is one-time use:
+    the song is consumed once played.
+    """
     display_name = "Shuffle Saria's Song"
     default = 0
 
@@ -520,8 +537,9 @@ class ShuffleSword(Toggle):
 
 class ShuffleSwim(Toggle):
     """
-    Shuffle the ability to swim into the item pool. Until it is found, deep
-    water can't be swum in (Zora Link included).
+    Shuffle the ability to swim into the item pool. Until it is found, entering
+    the swim state or submerging into deep water respawns Link (all forms,
+    Zora included).
     """
     display_name = "Shuffle Swim"
     default = 0
@@ -638,7 +656,7 @@ class StartingBunnyHood(Toggle):
 
 
 class StartingConsumables(Toggle):
-    """Start with a stock of consumables (sticks, nuts, ammo, rupees for owned wallets)."""
+    """Start with full Deku Sticks and Deku Nuts (ammo filled to your bag capacity)."""
     display_name = "Starting Consumables"
     default = 0
 
@@ -662,10 +680,13 @@ class StartingMapsAndCompasses(Toggle):
 
 class StartingRupees(Range):
     """
-    How many rupees you start with.
+    Whether you start with a full wallet. The game reads this as a simple
+    on/off flag: any value above 0 fills your rupees to your starting wallet's
+    capacity (99 with the base wallet), while 0 starts you with none. The exact
+    number is not a literal starting rupee count.
 
-    Note: the 2ship default is 0; this option defaults to 99 (a full base
-    wallet) as an Archipelago quality-of-life divergence.
+    Note: the 2ship default is 0 (off); this option defaults to 99 (on, a full
+    base wallet) as an Archipelago quality-of-life divergence.
     """
     display_name = "Starting Rupees"
     range_start = 0
