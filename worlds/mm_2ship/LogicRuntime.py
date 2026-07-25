@@ -499,7 +499,8 @@ class Solver:
                 disabled[f"RC_{loc.name}"] = vanilla.value
         return disabled
 
-    # -- starting items (port of GetComputedStartingItems, IS_ARCHI branch) ----
+    # -- starting items (port of GrantStartingItems: the IS_ARCHI branch of
+    #    GetComputedStartingItems, plus what GrantStartingItems adds on top) ---
 
     def _compute_starting_items(self) -> dict[str, int]:
         opts = self.options
@@ -539,6 +540,17 @@ class Solver:
             give("OCARINA")
         if opts.get("RO_STARTING_BUNNY_HOOD"):
             give("MASK_BUNNY")
+        # Beyond GetComputedStartingItems, GrantStartingItems hands out full
+        # consumables — and it runs before the C++ solver (OnFileCreate.cpp
+        # grants, then applies logic) and on AP connect (Archipelago.cpp), so
+        # they are part of the starting inventory the logic must assume.
+        # Deku Sticks/Nuts gate torches and a long list of CanKillEnemy rules.
+        # Its other two grants need nothing here: starting health arrives via
+        # self.starting_health, and starting rupees never matter because
+        # CAN_AFFORD only reads the wallet tier, not the rupee count.
+        if opts.get("RO_STARTING_CONSUMABLES"):
+            give("DEKU_STICK")
+            give("DEKU_NUT")
         # Clock shuffle's guaranteed starting time item is pushed as a real
         # precollected AP item by MM2ShipWorld (so the client also grants it);
         # it therefore arrives via state.prog_items, not here.

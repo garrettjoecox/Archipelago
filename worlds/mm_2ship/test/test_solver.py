@@ -117,6 +117,12 @@ class TestSolverCoverage(MM2ShipTestBase):
         # shuffle it, so the starting Hero's Shield covers that half.
         self.assertTrue(can_explode("Blast Mask"), "Blast Mask + shield did not grant explosives")
 
+    def test_consumables_absent_when_option_off(self) -> None:
+        solver = self.world.logic  # options = {} -> starting_consumables off
+        ctx = LogicContext(solver, dict(solver.starting_counts))
+        self.assertFalse(ctx.has_item("ITEM_DEKU_STICK"))
+        self.assertFalse(ctx.has_item("ITEM_DEKU_NUT"))
+
     def test_monotone_in_items(self) -> None:
         solver = self.world.logic
         empty = solver.solve(dict(solver.starting_counts))
@@ -126,6 +132,21 @@ class TestSolverCoverage(MM2ShipTestBase):
 
         self.assertLessEqual(set(empty.checks), set(full.checks))
         self.assertLessEqual(set(empty.regions), set(full.regions))
+
+
+class TestStartingConsumables(MM2ShipTestBase):
+    options = {"starting_consumables": True}
+
+    def test_starting_consumables_are_in_logic(self) -> None:
+        """GrantStartingItems hands out full Deku Sticks and Nuts on top of
+        GetComputedStartingItems, and it runs before the C++ solver
+        (OnFileCreate.cpp) and on AP connect (Archipelago.cpp) — so the solver
+        has to assume them. ITEM_DEKU_STICK gates torch lighting and a long
+        list of CanKillEnemy rules."""
+        solver = self.world.logic
+        ctx = LogicContext(solver, dict(solver.starting_counts))
+        self.assertTrue(ctx.has_item("ITEM_DEKU_STICK"), "starting Deku Stick missing from logic")
+        self.assertTrue(ctx.has_item("ITEM_DEKU_NUT"), "starting Deku Nut missing from logic")
 
 
 class TestGeneratedDataShape(MM2ShipTestBase):
