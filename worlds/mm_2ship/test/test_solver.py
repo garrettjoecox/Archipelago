@@ -6,9 +6,14 @@ breaks coverage or the vanilla layout becomes uncompletable, they fail before
 anything reaches a real multiworld.
 """
 
+from BaseClasses import ItemClassification as IC
+
 from . import MM2ShipTestBase
 from ..Enums import Locations
 from ..ItemData import ITEMS
+from ..Items import item_data_table
+from ..LogicHelpersGen import CAN_USE_EXPLOSIVE
+from ..LogicRuntime import LogicContext
 from ..RegionData import REGIONS
 from ..VanillaItems import vanilla_items
 
@@ -63,6 +68,54 @@ class TestSolverCoverage(MM2ShipTestBase):
             seen |= new
 
         self.assertEqual(seen, _all_checks(), "vanilla layout deadlocked")
+
+    def test_non_progression_items_cannot_gate_logic(self) -> None:
+        """The mirror of test_progression_only_reaches_everything: nothing AP
+        classifies as filler/useful/trap may open a check. Those items never
+        enter CollectionState.prog_items, so if one did gate logic, fill would
+        be free to hide progression behind a check the player cannot reach —
+        which is exactly what the bombchu refill packs used to do."""
+        solver = self.world.logic
+        baseline = solver.solve(dict(solver.starting_counts)).checks
+
+        junk = sorted(
+            member.value for member, data in item_data_table.items()
+            if data.item_id is not None and not (data.classification & IC.progression)
+        )
+        counts = dict(solver.starting_counts)
+        for name in junk:
+            counts[name] = counts.get(name, 0) + 1
+
+        extra = solver.solve(counts).checks - baseline
+        if extra:  # narrow down to the offenders for a useful failure message
+            culprits = [
+                name for name in junk
+                if solver.solve({**solver.starting_counts, name: 1}).checks - baseline
+            ]
+            self.fail(f"non-progression items opened {len(extra)} checks; "
+                      f"logic-relevant but not classified progression: {culprits}")
+
+    def test_explosives_require_a_bomb_bag(self) -> None:
+        """CAN_USE_EXPLOSIVE must track what the player can actually detonate.
+        Item_Give's bombchu/bomb refill branches fill the inventory slot but
+        clamp ammo to CUR_CAPACITY(UPG_BOMB_BAG) — 0 without a bag — so a pack
+        on its own is an icon with no ammo."""
+        solver = self.world.logic
+
+        def can_explode(*item_names: str) -> bool:
+            counts = dict(solver.starting_counts)
+            for name in item_names:
+                counts[name] = counts.get(name, 0) + 1
+            return CAN_USE_EXPLOSIVE(LogicContext(solver, counts))
+
+        self.assertFalse(can_explode(), "explosives available with no items")
+        for pack in ("Bombchu", "5 Bombchus", "10 Bombchus", "5 Bombs", "10 Bombs"):
+            self.assertFalse(can_explode(pack), f"{pack} granted explosives without a Bomb Bag")
+        for bag in ("Bomb Bag", "Big Bomb Bag", "Biggest Bomb Bag", "Progressive Bomb Bag"):
+            self.assertTrue(can_explode(bag), f"{bag} did not grant explosives")
+        # Blast Mask needs a shield to survive the blast; default options don't
+        # shuffle it, so the starting Hero's Shield covers that half.
+        self.assertTrue(can_explode("Blast Mask"), "Blast Mask + shield did not grant explosives")
 
     def test_monotone_in_items(self) -> None:
         solver = self.world.logic

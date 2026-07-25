@@ -585,22 +585,42 @@ def main() -> None:
     quest_to_ocarina = compute_quest_to_ocarina(enums)
     quest_item_grants = compute_quest_item_grants(enums, items)
 
-    # ITEM_X -> RIs granting it (Items.cpp itemId column), with ammo-pack
-    # normalization for inventory slots that exist independently of a bag
-    # (getting any bombchu pack sets INV_CONTENT(ITEM_BOMBCHU), etc.).
+    # ITEM_X -> RIs granting it (Items.cpp itemId column), plus two corrections
+    # the raw column can't express, both read off Item_Give/GiveItem.
+    #
+    # pack_normalize: refill packs whose Item_Give branch ALSO grants the slot's
+    # capacity upgrade, so the pack alone is genuinely usable — z_parameter.c
+    # calls Inventory_ChangeUpgrade(UPG_DEKU_STICKS/UPG_DEKU_NUTS, 1) when the
+    # slot is empty. Bomb and Bombchu packs are deliberately NOT here: their
+    # branches set INV_CONTENT but then clamp AMMO to CUR_CAPACITY(UPG_BOMB_BAG),
+    # which is 0 with no Bomb Bag (z_inventory.c gUpgradeCapacities), i.e. the
+    # icon appears with zero ammo. Treating them as explosives let fill hide
+    # progression behind checks the player cannot actually open.
     pack_normalize = {
-        "ITEM_BOMBCHUS_1": "ITEM_BOMBCHU", "ITEM_BOMBCHUS_5": "ITEM_BOMBCHU",
-        "ITEM_BOMBCHUS_10": "ITEM_BOMBCHU", "ITEM_BOMBCHUS_20": "ITEM_BOMBCHU",
         "ITEM_DEKU_STICKS_5": "ITEM_DEKU_STICK", "ITEM_DEKU_STICKS_10": "ITEM_DEKU_STICK",
         "ITEM_DEKU_NUTS_5": "ITEM_DEKU_NUT", "ITEM_DEKU_NUTS_10": "ITEM_DEKU_NUT",
+    }
+    # extra_slot_grants: items that fill inventory slots beyond their own itemId.
+    # GiveItem.cpp's RI_BOMB_BAG_* case sets INV_CONTENT(ITEM_BOMBCHU) and fills
+    # both bomb and bombchu ammo to capacity, so any Bomb Bag (including the
+    # progressive one, whose itemId is ITEM_BOMB_BAG_20) satisfies both
+    # HAS_ITEM(ITEM_BOMB) and HAS_ITEM(ITEM_BOMBCHU).
+    bomb_slots = ("ITEM_BOMB", "ITEM_BOMBCHU")
+    extra_slot_grants = {
+        "ITEM_BOMB_BAG_20": bomb_slots,
+        "ITEM_BOMB_BAG_30": bomb_slots,
+        "ITEM_BOMB_BAG_40": bomb_slots,
     }
     item_grants: dict[str, list[str]] = {}
     for ri in ri_order:
         if ri not in items:
             continue
-        iid = pack_normalize.get(items[ri]["item_id"], items[ri]["item_id"])
+        raw = items[ri]["item_id"]
+        iid = pack_normalize.get(raw, raw)
         if iid != "ITEM_NONE":
             item_grants.setdefault(iid, []).append(ri)
+        for extra in extra_slot_grants.get(raw, ()):
+            item_grants.setdefault(extra, []).append(ri)
 
     # sanity: structural GiveItem cases the runtime handles by hand
     for needed in ("RI_SKELETON_KEY", "RI_TIME_PROGRESSIVE"):
@@ -747,6 +767,21 @@ def main() -> None:
     if unplaced:
         print(f"[genlogic] WARNING: {len(unplaced)} checks exist in Checks.cpp but are in no region "
               f"(first few: {unplaced[:6]}) — they will be UNREACHABLE if enabled")
+
+    # Every inventory item the rules test for must be grantable by something
+    # that can end up in the pool, or the condition is permanently false and
+    # the logic silently goes over-strict. This is how ITEM_BOMB went missing
+    # once — nothing in Items.cpp carries it as an itemId, it only arrives via
+    # extra_slot_grants off the Bomb Bags.
+    ungrantable = sorted(
+        c for c in tr.used_names
+        if c.startswith("ITEM_") and c not in item_grants
+    )
+    if ungrantable:
+        print(f"[genlogic] WARNING: {len(ungrantable)} item(s) tested by the logic have no "
+              f"granting item in Items.cpp — those conditions can never be satisfied:")
+        for entry in ungrantable:
+            print(f"   - {entry}")
 
     # options used via s.opt() must exist in Options.cpp
     used_ro_ids = {u for u in tr.used_names if u.startswith("RO_")}

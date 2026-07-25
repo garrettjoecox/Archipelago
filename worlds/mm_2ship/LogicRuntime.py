@@ -128,11 +128,13 @@ class LogicContext:
         return False
 
     def has_item(self, item_const: str) -> bool:
-        """HAS_ITEM(ITEM_X): does the inventory slot for ITEM_X hold it?"""
-        if self._any(ITEM_TO_ITEMS.get(item_const, ())):
-            return True
-        extra = self.solver.item_extra_grants.get(item_const)
-        return extra is not None and self._any(extra)
+        """HAS_ITEM(ITEM_X): does the inventory slot for ITEM_X hold it?
+
+        ITEM_TO_ITEMS is generated from Items.cpp's itemId column plus the
+        slot grants Item_Give/GiveItem add on top (a Bomb Bag fills the bomb
+        AND bombchu slots; a refill pack that can't raise its own capacity
+        grants nothing) — see genlogic's pack_normalize/extra_slot_grants."""
+        return self._any(ITEM_TO_ITEMS.get(item_const, ()))
 
     def has_magic(self) -> bool:
         return self._any(self.solver.magic_items)
@@ -432,12 +434,6 @@ class Solver:
             _item("TIME_DAY_1"), _item("TIME_NIGHT_1"), _item("TIME_DAY_2"),
             _item("TIME_NIGHT_2"), _item("TIME_DAY_3"), _item("TIME_NIGHT_3"),
         ]
-        # Derived-inventory grants that Items.cpp's itemId column can't express
-        # (progressive items materialize their tier on receipt — ConvertItem.cpp).
-        self.item_extra_grants: dict[str, tuple[str, ...]] = {
-            "ITEM_BOMB": (_item("PROGRESSIVE_BOMB_BAG"),),
-            "ITEM_BOW": (_item("PROGRESSIVE_BOW"),),
-        }
         # QUEST_* satisfiable via progressive items: (item name, copies needed)
         self.progressive_quest_grants: dict[str, tuple[str, int]] = {
             "QUEST_SONG_LULLABY": (_item("PROGRESSIVE_LULLABY"), 2),
@@ -478,8 +474,6 @@ class Solver:
         names.update(name for name, _ in self.direct_sword_tiers)
         names.update(name for name, _ in self.direct_wallet_tiers)
         names.update(self.magic_items)
-        for grants in self.item_extra_grants.values():
-            names.update(grants)
         names.update(name for name, _ in self.progressive_quest_grants.values())
         names.update((self.progressive_sword, self.progressive_wallet, self.progressive_clock,
                       self.skeleton_key, self.heart_container, self.heart_piece))
