@@ -70,7 +70,7 @@ ITEMS: dict[str, ItemEntry] = {
     "GREAT_BAY_SMALL_KEY": ItemEntry(46, 'Great Bay Small Key', "RITYPE_SMALL_KEY", True),
     "GREAT_BAY_STRAY_FAIRY": ItemEntry(47, 'Great Bay Stray Fairy', "RITYPE_STRAY_FAIRY", True),
     "GREAT_FAIRY_SWORD": ItemEntry(48, "Great Fairy's Sword", "RITYPE_LESSER", True),
-    "GREAT_SPIN_ATTACK": ItemEntry(49, 'Great Spin Attack', "RITYPE_LESSER", False),
+    "GREAT_SPIN_ATTACK": ItemEntry(49, 'Great Spin Attack', "RITYPE_LESSER", True),
     "GREEN_POTION_REFILL": ItemEntry(50, 'Green Potion Refill', "RITYPE_JUNK", False),
     "GS_TOKEN_OCEAN": ItemEntry(51, 'Ocean Gold Skulltula Token', "RITYPE_SKULLTULA_TOKEN", True),
     "GS_TOKEN_SWAMP": ItemEntry(52, 'Swamp Gold Skulltula Token', "RITYPE_SKULLTULA_TOKEN", True),

@@ -9,8 +9,10 @@ import unittest
 from Options import Choice, OptionError
 
 from . import MM2ShipTestBase
+from ..LocationFilter import RCTYPE_OPTION
 from ..OptionData import RO_CHOICE_VALUES, RO_OPTIONS, RO_RANGES
-from ..Options import MM2ShipOptions
+from ..Options import MM2ShipOptions, mm2ship_option_groups
+from ..Presets import mm2ship_options_presets
 
 
 class TestDefault(MM2ShipTestBase):
@@ -29,6 +31,7 @@ class TestAllShuffles(MM2ShipTestBase):
         "shuffle_enemy_drops": True,
         "shuffle_butterflies": True,
         "shuffle_hive_drops": True,
+        "shuffle_wonder_items": True,
         "shuffle_cows": True,
         "shuffle_frogs": True,
         "shuffle_shops": True,
@@ -179,6 +182,28 @@ class TestOptionMirror(unittest.TestCase):
     CHOICE_NAME_ALIASES = {
         "randomized": "RANDOM",
     }
+
+    def test_location_type_options_are_wired_everywhere(self) -> None:
+        """Every option that gates a location type is repeated by hand in four
+        places, and three of them fail silently when one is missed: a typo in
+        RCTYPE_OPTION enables the whole type (location_should_be_included reads
+        it with a defaulting getattr), a gap in Allsanity ships a preset that
+        does not mean what it says, and a gap in TestAllShuffles quietly drops
+        a location class from the headline all-on generation test."""
+        hints = MM2ShipOptions.type_hints
+        grouped = {option for group in mm2ship_option_groups for option in group.options}
+        allsanity = mm2ship_options_presets["Allsanity"]
+
+        for rctype, ap_name in sorted(RCTYPE_OPTION.items()):
+            self.assertIn(ap_name, hints,
+                          f"{rctype} maps to {ap_name!r}, which is not an MM2ShipOptions field — "
+                          f"the filter would silently treat that location type as always on")
+            self.assertIn(hints[ap_name], grouped,
+                          f"{ap_name} is in no OptionGroup")
+            self.assertTrue(allsanity.get(ap_name),
+                            f"{ap_name} adds locations but is not enabled in the Allsanity preset")
+            self.assertTrue(TestAllShuffles.options.get(ap_name),
+                            f"{ap_name} adds locations but is not enabled in TestAllShuffles")
 
     def test_defaults_match_cpp(self) -> None:
         hints = MM2ShipOptions.type_hints

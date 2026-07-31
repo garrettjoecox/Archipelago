@@ -37,6 +37,7 @@ RCTYPE_OPTION: dict[str, str] = {
     "RCTYPE_SNOWBALL":    "shuffle_snowball_drops",
     "RCTYPE_TINGLE_SHOP": "shuffle_tingle_shops",
     "RCTYPE_TREE":        "shuffle_tree_drops",
+    "RCTYPE_WONDER_ITEM": "shuffle_wonder_items",
 }
 
 
@@ -52,6 +53,9 @@ def location_should_be_included(world: "MM2ShipWorld", loc: Locations) -> bool:
     create_regions_and_locations (to filter Location objects) and from the
     logic solver (disabled checks self-grant their vanilla items). All must
     stay in sync — always go through this function.
+
+    Returning False drops the AP Location entirely, which also keeps its
+    vanilla item out of the pool: ItemPool builds from the locations that exist.
     """
     name = loc.name  # UPPER_SNAKE_CASE enum key
 
@@ -64,7 +68,8 @@ def location_should_be_included(world: "MM2ShipWorld", loc: Locations) -> bool:
         if option is not None and not option.value:
             return False
 
-    # Sub-exclusions for grass (only reached when shuffle_grass_drops is ON)
+    # Sub-exclusions for grass (only reached when shuffle_grass_drops is ON),
+    # mirroring GeneratePools.cpp's handling of excluded junk-item checks.
     if rctype == "RCTYPE_GRASS":
         if world.options.exclude_termina_field_grass.value and name.startswith("TERMINA_FIELD_GRASS_"):
             return False

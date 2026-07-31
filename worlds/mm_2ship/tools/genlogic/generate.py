@@ -755,18 +755,24 @@ def main() -> None:
           f"{len(tr.needed_helpers)} generated helpers)")
 
     # ---- consistency checks -------------------------------------------------------
-    # Every check in the region graph must exist in Checks.cpp; report checks
-    # never placed in any region (they'd be unreachable).
+    # Every check in the region graph must exist in Checks.cpp, and every check
+    # in Checks.cpp must be placed in some region. Both directions are fatal.
     placed_checks: set[str] = set()
     for t in translated.values():
         placed_checks.update(rc for rc, _, _ in t["checks"])
     unknown_checks = sorted(placed_checks - set(checks))
     if unknown_checks:
         sys.exit(f"ERROR: region graph references unknown checks: {unknown_checks[:10]}")
+    # A check in no region is dead content: GeneratePools.cpp builds its pool by
+    # walking the region graph, so the game never shuffles it, and the apworld
+    # would create a location nothing can reach. This is a fatal upstream data
+    # loss (a dropped CHECK() line), so fail here rather than emit a broken
+    # apworld — fix the region file, don't filter it out on the AP side.
     unplaced = sorted(set(checks) - placed_checks - {"RC_UNKNOWN", "RC_MAX"})
     if unplaced:
-        print(f"[genlogic] WARNING: {len(unplaced)} checks exist in Checks.cpp but are in no region "
-              f"(first few: {unplaced[:6]}) — they will be UNREACHABLE if enabled")
+        sys.exit(f"ERROR: {len(unplaced)} checks exist in Checks.cpp but are in no region, so they "
+                 f"are never shuffled and would be UNREACHABLE: {unplaced[:10]}\n"
+                 f"       Add the missing CHECK() line(s) to the owning region file.")
 
     # Every inventory item the rules test for must be grantable by something
     # that can end up in the pool, or the condition is permanently false and

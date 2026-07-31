@@ -21,11 +21,12 @@ new players; you'll have a much better time in the randomizer when you're famili
 ## What does randomization do to this game?
 
 Item locations are shuffled with the rest of the multiworld. Chests, major items, songs, masks and dungeon items are
-randomized by default, with optional pools for shops, owl statues, cows, frogs, Gold Skulltulas, freestanding items and
-breakables (pots, grass, crates, barrels, snowballs, trees, enemy drops). Further options can shuffle boss and enemy
-souls (which gate fighting those enemies), the ocarina buttons, the ability to swim, and even the six half-days of the
-clock itself (Clock Shuffle). The logic — including the three-day time system — is generated directly from the 2S2H
-randomizer's own rules, so in-logic expectations match the standalone randomizer.
+randomized by default, with optional pools for shops, owl statues, cows, frogs, Gold Skulltulas, freestanding items,
+hidden "wonder items" (invisible rupees and the clusters revealed by striking hidden triggers) and breakables (pots,
+grass, crates, barrels, snowballs, trees, enemy drops). Further options can shuffle boss and enemy souls (which gate
+fighting those enemies), the ocarina buttons, the ability to swim, and even the six half-days of the clock itself
+(Clock Shuffle). The logic — including the three-day time system — is generated directly from the 2S2H randomizer's
+own rules, so in-logic expectations match the standalone randomizer.
 
 ## What is the goal of 2 Ship 2 Harkinian (MM) when randomized?
 

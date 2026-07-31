@@ -1,7 +1,7 @@
 {
-  "GeneratePools.cpp": "a2ba1d3eeade7c24",
+  "GeneratePools.cpp": "84d0da459a2c4e14",
   "StartingItems.cpp": "8fb70ff5848094af",
-  "ConvertItem.cpp": "d0657b02a0da0f53",
+  "ConvertItem.cpp": "591c4d5340780725",
   "PlacementConstraints.cpp": "33cce0ce02cfa091",
   "TimeLogic.cpp": "b5e252f6533bf1b0",
   "Logic.cpp": "80cde9211af74c0c",
@@ -9,5 +9,5 @@
   "Logic.h:CanAccessDungeon": "f399573bc96bb911",
   "Logic.h:MeetsMoonRequirements": "db945d97fdee90a1",
   "Logic.h:OwnsHalfDayForMode": "d88f0b47fc51bc9a",
-  "Archipelago.cpp": "59f6f8c9cf94b99e"
+  "Archipelago.cpp": "4fa3ace6e7e691c7"
 }

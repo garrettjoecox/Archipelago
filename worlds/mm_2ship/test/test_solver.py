@@ -116,6 +116,14 @@ class TestSolverCoverage(MM2ShipTestBase):
         # Blast Mask needs a shield to survive the blast; default options don't
         # shuffle it, so the starting Hero's Shield covers that half.
         self.assertTrue(can_explode("Blast Mask"), "Blast Mask + shield did not grant explosives")
+        # Powder Kegs are deliberately NOT explosives: 2ship dropped
+        # (HAS_ITEM(ITEM_POWDER_KEG) && CAN_BE_GORON) from CAN_USE_EXPLOSIVE in
+        # PR #1577 because re-buying a keg for every wall is miserable. Kegs
+        # still gate their own explicit HAS_ITEM(ITEM_POWDER_KEG) rules.
+        # Goron Mask is required for the assertion to bite — the dropped clause
+        # needed it, so a keg alone could never have satisfied it either way.
+        self.assertFalse(can_explode("Powder Keg", "Goron Mask"),
+                         "Powder Keg + Goron Mask granted explosives")
 
     def test_consumables_absent_when_option_off(self) -> None:
         solver = self.world.logic  # options = {} -> starting_consumables off

@@ -338,6 +338,16 @@ class PlentifulItems(Toggle):
     default = 0
 
 
+class PurchaseInfiniteRupees(Toggle):
+    """
+    Rupees sold in shops can be bought any number of times per cycle, instead
+    of going out of stock after one purchase. The Archipelago check for that
+    shop slot is still sent only once.
+    """
+    display_name = "Purchase Infinite Rupees"
+    default = 0
+
+
 class ShuffleBarrelDrops(Toggle):
     """Shuffle the items dropped by breakable barrels into the location pool."""
     display_name = "Shuffle Barrel Drops"
@@ -571,6 +581,16 @@ class ShuffleTreeDrops(Toggle):
     default = 0
 
 
+class ShuffleWonderItems(Toggle):
+    """
+    Shuffle the game's hidden "wonder item" drops into the location pool —
+    invisible rupees and the item clusters that appear when you strike an
+    unmarked trigger, such as the Termina Field walls and the spider houses.
+    """
+    display_name = "Shuffle Wonder Items"
+    default = 0
+
+
 class ShuffleTriforcePieces(Toggle):
     """
     Triforce Hunt: shuffle Triforce Pieces into the multiworld and win by
@@ -741,6 +761,7 @@ class MM2ShipOptions(PerGameCommonOptions):
     placement_stray_fairies: PlacementStrayFairies
 
     plentiful_items: PlentifulItems
+    purchase_infinite_rupees: PurchaseInfiniteRupees
 
     shuffle_triforce_pieces: ShuffleTriforcePieces
     triforce_pieces_max: TriforcePiecesMax
@@ -808,6 +829,7 @@ class MM2ShipOptions(PerGameCommonOptions):
     shuffle_enemy_drops: ShuffleEnemyDrops
     shuffle_butterflies: ShuffleButterflies
     shuffle_hive_drops: ShuffleHiveDrops
+    shuffle_wonder_items: ShuffleWonderItems
 
     shuffle_boss_remains: ShuffleBossRemains
     shuffle_boss_souls: ShuffleBossSouls
@@ -861,6 +883,7 @@ mm2ship_option_groups = [
         # core logic + density
         PlentifulItems,
         ExtraItems,
+        PurchaseInfiniteRupees,
 
         # goal / endgame
         ShuffleTriforcePieces,
@@ -938,6 +961,7 @@ mm2ship_option_groups = [
         ShuffleEnemyDrops,
         ShuffleButterflies,
         ShuffleHiveDrops,
+        ShuffleWonderItems,
     ]),
 
     OptionGroup("Hints", [
