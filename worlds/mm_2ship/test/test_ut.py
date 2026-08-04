@@ -18,6 +18,9 @@ class TestUniversalTrackerRegen(MM2ShipTestBase):
         "triforce_pieces_required": 5,
         "placement_small_keys": "own_dungeon",
         "access_majora_remains_count": 3,
+        # a partial skulltula shuffle makes the location set itself seed-derived
+        "shuffle_gold_skulltulas": True,
+        "skulltula_shuffled": 7,
     }
 
     def test_slot_data_carries_all_options(self) -> None:
@@ -28,6 +31,7 @@ class TestUniversalTrackerRegen(MM2ShipTestBase):
         self.assertIn("starting_clock", slot_data)
         self.assertIn("shop_prices", slot_data)
         self.assertTrue(slot_data["shop_prices"], "shop prices missing despite shuffle_shops")
+        self.assertIn("skulltula_seed", slot_data)
 
     def test_interpret_slot_data_returns_passthrough(self) -> None:
         slot_data = self.world.fill_slot_data()
@@ -47,6 +51,8 @@ class TestUniversalTrackerRegen(MM2ShipTestBase):
 
         self.assertEqual(regen_world.shop_prices, self.world.shop_prices)
         self.assertEqual(regen_world.starting_clock_name, self.world.starting_clock_name)
+        self.assertEqual(regen_world.skulltula_shuffled_locations,
+                         self.world.skulltula_shuffled_locations)
         self.assertEqual(
             {loc.name for loc in regen.get_locations(1)},
             {loc.name for loc in self.multiworld.get_locations(self.player)},

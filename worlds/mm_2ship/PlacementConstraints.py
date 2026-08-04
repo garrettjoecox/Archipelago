@@ -7,6 +7,7 @@ from Fill import fill_restrictive
 
 from .Enums import Locations
 from .LocationData import LOCATION_DUNGEON
+from .OptionData import RO_CHOICE_VALUES
 
 if TYPE_CHECKING:
     from . import MM2ShipWorld
@@ -31,7 +32,14 @@ PLACEMENT_OPTION_BY_TYPE: dict[str, str] = {
     "stray_fairy": "placement_stray_fairies",
 }
 
-OWN_DUNGEON = 1  # RO_DUNGEON_ITEM_OWN_DUNGEON
+# RandoOptionDungeonItemPlacement ordinals, from the generated Types.h mirror.
+OWN_DUNGEON = RO_CHOICE_VALUES["RO_DUNGEON_ITEM_OWN_DUNGEON"]
+START_WITH = RO_CHOICE_VALUES["RO_DUNGEON_ITEM_START_WITH"]
+
+
+def placement_mode(world: "MM2ShipWorld", item_type: str) -> int:
+    """The placement_* value governing one confined dungeon item type."""
+    return getattr(world.options, PLACEMENT_OPTION_BY_TYPE[item_type]).value
 
 
 def confine_dungeon_items(world: "MM2ShipWorld") -> None:
@@ -50,8 +58,8 @@ def confine_dungeon_items(world: "MM2ShipWorld") -> None:
     """
     # Item name -> owning dungeon, for every type whose option is Own Dungeon.
     confined_name_to_dungeon: dict[str, str] = {}
-    for item_type, option_name in PLACEMENT_OPTION_BY_TYPE.items():
-        if getattr(world.options, option_name).value != OWN_DUNGEON:
+    for item_type in PLACEMENT_OPTION_BY_TYPE:
+        if placement_mode(world, item_type) != OWN_DUNGEON:
             continue
         for dungeon, item_names in DUNGEON_ITEM_NAMES.items():
             confined_name_to_dungeon[item_names[item_type]] = dungeon

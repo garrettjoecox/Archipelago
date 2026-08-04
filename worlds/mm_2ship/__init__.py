@@ -16,6 +16,7 @@ from settings import Group, Bool
 # `from .Enums import Items` binding.
 from .Enums import Items as ItemsEnum
 from .Items import MM2ShipItem, item_data_table, item_table, item_name_groups
+from .LocationFilter import roll_skulltula_subset
 from .Locations import location_table, location_name_groups
 from .LogicRuntime import Solver
 from .OptionData import RO_OPTIONS
@@ -114,6 +115,11 @@ class MM2ShipWorld(World):
         # Clock Shuffle's guaranteed starting time item (see generate_early)
         self.starting_clock_name: str | None = None
 
+        # Which Gold Skulltulas are checks, and the seed that picked them
+        # (both filled in by generate_early — see LocationFilter).
+        self.skulltula_seed: int = 0
+        self.skulltula_shuffled_locations: frozenset[str] = frozenset()
+
         # Items held for placement during pre_fill (dungeon confinement);
         # populated only while confine_dungeon_items runs.
         self.pre_fill_items: list[Item] = []
@@ -195,10 +201,13 @@ class MM2ShipWorld(World):
 
         # Required counts above what the pool can contain would be unbeatable;
         # clamp down to the pool cap, like the 2ship UI does.
+        # skulltula_tokens_required is deliberately absent: every Spider House
+        # always hands out all 30 of its tokens (skulltula_shuffled of them
+        # through the pool, the rest straight from the unshuffled skulltulas),
+        # so any requirement up to 30 stays satisfiable.
         for required_name, cap_name in (
             ("triforce_pieces_required", "triforce_pieces_max"),
             ("stray_fairies_required", "stray_fairies_max"),
-            ("skulltula_tokens_required", "skulltula_tokens_max"),
         ):
             required = getattr(self.options, required_name)
             cap = getattr(self.options, cap_name).value
@@ -207,6 +216,14 @@ class MM2ShipWorld(World):
                     "MM2Ship (player %s): %s (%s) exceeds %s (%s); clamping down.",
                     self.player, required_name, required.value, cap_name, cap)
                 required.value = cap
+
+        # Which Gold Skulltulas are checks (see LocationFilter for the rules).
+        if passthrough is not None:
+            self.skulltula_seed = int(passthrough.get("skulltula_seed", 0))
+        else:
+            self.skulltula_seed = self.random.getrandbits(32)
+        self.skulltula_shuffled_locations = roll_skulltula_subset(
+            self.options.skulltula_shuffled.value, self.skulltula_seed)
 
         # Clock Shuffle guarantee (mirrors GetComputedStartingItems): the
         # player always starts with one time item so some half-day is owned.
@@ -281,6 +298,9 @@ class MM2ShipWorld(World):
             "apworld_version": self.apworld_version,
             "true_no_logic": int(self.options.true_no_logic.value),
             "starting_clock": self.starting_clock_name,
+            # Seed behind the Gold Skulltula subset, so Universal Tracker can
+            # rebuild the identical location list (see roll_skulltula_subset).
+            "skulltula_seed": self.skulltula_seed,
             # Shop prices (dict[RC_* name, price])
             "shop_prices": self.shop_prices,
         })

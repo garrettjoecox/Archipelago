@@ -114,9 +114,6 @@ class TestRequiredCountsClamped(MM2ShipTestBase):
         "shuffle_triforce_pieces": True,
         "triforce_pieces_max": 12,
         "triforce_pieces_required": 900,
-        "shuffle_gold_skulltulas": True,
-        "skulltula_tokens_max": 10,
-        "skulltula_tokens_required": 25,
         "stray_fairies_max": 5,
         "stray_fairies_required": 15,
         "shuffle_pot_drops": True,  # room for the triforce pieces
@@ -124,7 +121,6 @@ class TestRequiredCountsClamped(MM2ShipTestBase):
 
     def test_required_clamped_to_max(self) -> None:
         self.assertEqual(self.world.options.triforce_pieces_required.value, 12)
-        self.assertEqual(self.world.options.skulltula_tokens_required.value, 10)
         self.assertEqual(self.world.options.stray_fairies_required.value, 5)
 
 

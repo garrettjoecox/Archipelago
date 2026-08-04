@@ -4,8 +4,21 @@ from typing import TYPE_CHECKING
 
 from BaseClasses import ItemClassification as IC
 
+from .PlacementConstraints import PLACEMENT_OPTION_BY_TYPE, START_WITH, placement_mode
+
 if TYPE_CHECKING:
     from . import MM2ShipWorld
+
+
+def _start_with_dungeon_items(world: "MM2ShipWorld") -> set[str]:
+    """AP item names granted up front by the placement_* = Start With options."""
+    from .LogicHelpersGen import DUNGEON_ITEMS
+
+    names: set[str] = set()
+    for item_type in PLACEMENT_OPTION_BY_TYPE:
+        if placement_mode(world, item_type) == START_WITH:
+            names.update(items[item_type] for items in DUNGEON_ITEMS.values())
+    return names
 
 
 def create_item_pool(world: "MM2ShipWorld") -> None:
@@ -40,6 +53,12 @@ def create_item_pool(world: "MM2ShipWorld") -> None:
         Items.TINGLE_MAP_WOODFALL,
     }
 
+    # Dungeon items the player is handed on connect (placement_* = Start With).
+    # GetComputedStartingItems grants exactly one per vanilla location of each
+    # kind — 1/3/1/4 Small Keys, one Boss Key and 15 Stray Fairies per dungeon —
+    # so GeneratePools' starting-item removal clears every copy from the pool.
+    start_with_items = _start_with_dungeon_items(world)
+
     # Step 1: Add vanilla items from all enabled locations
     # This matches GeneratePools.cpp lines 28-153 where it loops through all checks
     # and adds their vanilla items to the item pool
@@ -61,6 +80,10 @@ def create_item_pool(world: "MM2ShipWorld") -> None:
 
             # Skip Bunny Hood if starting with it
             if world.options.starting_bunny_hood.value and vanilla_item == Items.MASK_BUNNY:
+                continue
+
+            # Skip dungeon items the player starts with (placement_* = Start With)
+            if vanilla_item.value in start_with_items:
                 continue
 
             # Skip Ocarina if not shuffled (you start with it instead)
@@ -163,11 +186,12 @@ def create_item_pool(world: "MM2ShipWorld") -> None:
     # Add the Skeleton Key if shuffled. This is a standalone item on top of each
     # dungeon's own Small Keys already in the pool — collecting it instantly grants
     # the max Small Keys for every dungeon at once (see GiveItem.cpp's RI_SKELETON_KEY case).
-    if world.options.shuffle_skeleton_key.value:
+    # Skipped when starting with Small Keys: it would have nothing left to unlock.
+    if world.options.shuffle_skeleton_key.value and placement_mode(world, "small_key") != START_WITH:
         world.multiworld.itempool.append(world.create_item("Skeleton Key"))
 
-    # Step 3: Trim stray fairies and skulltula tokens to max counts
-    # This matches GeneratePools.cpp lines 233-269
+    # Step 3: Trim stray fairies to the max count
+    # This matches GeneratePools.cpp's removeAbleItemsInPool pass
     # IMPORTANT: Only count and trim items for THIS player
     item_counts = Counter(item.name for item in world.multiworld.itempool if item.player == world.player)
 
@@ -188,20 +212,8 @@ def create_item_pool(world: "MM2ShipWorld") -> None:
                     item_counts[fairy_item] -= 1
                     break
 
-    # Skulltula tokens - trim to max count
-    skulltula_items = [
-        "Swamp Gold Skulltula Token",
-        "Ocean Gold Skulltula Token",
-    ]
-    max_skulltulas = world.options.skulltula_tokens_max.value
-    for skulltula_item in skulltula_items:
-        while item_counts[skulltula_item] > max_skulltulas:
-            # Remove one instance of THIS PLAYER's item
-            for item in world.multiworld.itempool:
-                if item.name == skulltula_item and item.player == world.player:
-                    world.multiworld.itempool.remove(item)
-                    item_counts[skulltula_item] -= 1
-                    break
+    # Gold Skulltula tokens need no trim: skulltula_shuffled already decided how
+    # many of each house's skulltulas are locations, and each contributes a token.
 
     # Step 4: Add extra copies of items specified by the player
     for item_name, count in world.options.extra_items.items():

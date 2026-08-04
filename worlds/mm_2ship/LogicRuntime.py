@@ -67,6 +67,11 @@ RO_CLOCK_SHUFFLE_RANDOM = 0
 RO_CLOCK_SHUFFLE_ASCENDING = 1
 RO_CLOCK_SHUFFLE_DESCENDING = 2
 
+RO_DUNGEON_ITEM_START_WITH = 2
+
+# z64save.h: stray fairies scattered through one dungeon
+STRAY_FAIRY_SCATTERED_TOTAL = 15
+
 RO_ACCESS_DUNGEONS_FORM_AND_SONG = 0
 RO_ACCESS_DUNGEONS_FORM_OR_SONG = 1
 RO_ACCESS_DUNGEONS_FORM_ONLY = 2
@@ -517,6 +522,21 @@ class Solver:
                         "TINGLE_MAP_STONE_TOWER", "TINGLE_MAP_WOODFALL", "WOODFALL_COMPASS",
                         "WOODFALL_MAP"):
                 give(key)
+        # Dungeon items handed over up front (placement_* = Start With). The
+        # counts are GetComputedStartingItems': one per vanilla location.
+        if opts.get("RO_PLACEMENT_SMALL_KEYS") == RO_DUNGEON_ITEM_START_WITH:
+            give("WOODFALL_SMALL_KEY", 1)
+            give("SNOWHEAD_SMALL_KEY", 3)
+            give("GREAT_BAY_SMALL_KEY", 1)
+            give("STONE_TOWER_SMALL_KEY", 4)
+        if opts.get("RO_PLACEMENT_BOSS_KEYS") == RO_DUNGEON_ITEM_START_WITH:
+            for key in ("WOODFALL_BOSS_KEY", "SNOWHEAD_BOSS_KEY",
+                        "GREAT_BAY_BOSS_KEY", "STONE_TOWER_BOSS_KEY"):
+                give(key)
+        if opts.get("RO_PLACEMENT_STRAY_FAIRIES") == RO_DUNGEON_ITEM_START_WITH:
+            for key in ("WOODFALL_STRAY_FAIRY", "SNOWHEAD_STRAY_FAIRY",
+                        "GREAT_BAY_STRAY_FAIRY", "STONE_TOWER_STRAY_FAIRY"):
+                give(key, STRAY_FAIRY_SCATTERED_TOTAL)
         if not opts.get("RO_SHUFFLE_SWIM"):
             give("ABILITY_SWIM")
         if not opts.get("RO_SHUFFLE_ENEMY_SOULS"):

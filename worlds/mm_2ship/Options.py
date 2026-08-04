@@ -289,10 +289,14 @@ class PlacementSmallKeys(Choice):
     players' worlds.
     Own Dungeon: each dungeon's Small Keys are confined to locations within
     that same dungeon.
+    Start With: you begin with every dungeon's Small Keys and none are added
+    to the item pool. The Skeleton Key is not shuffled either, since it would
+    have nothing left to unlock.
     """
     display_name = "Placement: Small Keys"
     option_anywhere = 0
     option_own_dungeon = 1
+    option_start_with = 2
     default = 0  # RO_DUNGEON_ITEM_ANYWHERE
 
 
@@ -304,10 +308,13 @@ class PlacementBossKeys(Choice):
     players' worlds.
     Own Dungeon: each dungeon's Boss Key is confined to locations within that
     same dungeon.
+    Start With: you begin with every dungeon's Boss Key and none are added to
+    the item pool.
     """
     display_name = "Placement: Boss Keys"
     option_anywhere = 0
     option_own_dungeon = 1
+    option_start_with = 2
     default = 0  # RO_DUNGEON_ITEM_ANYWHERE
 
 
@@ -320,10 +327,13 @@ class PlacementStrayFairies(Choice):
     players' worlds.
     Own Dungeon: each dungeon's Stray Fairies are confined to locations within
     that same dungeon.
+    Start With: you begin with all 15 Stray Fairies of every dungeon and none
+    are added to the item pool, so Stray Fairies in Pool has no effect.
     """
     display_name = "Placement: Stray Fairies"
     option_anywhere = 0
     option_own_dungeon = 1
+    option_start_with = 2
     default = 0  # RO_DUNGEON_ITEM_ANYWHERE
 
 
@@ -415,7 +425,10 @@ class ShuffleFreestandingItems(Toggle):
 
 
 class ShuffleFrogs(Toggle):
-    """Returning the five Frog Choir frogs grants shuffled checks."""
+    """
+    Talking to each of the four scattered Frog Choir frogs while wearing Don
+    Gero's Mask grants a shuffled check.
+    """
     display_name = "Shuffle Frogs"
     default = 0
 
@@ -427,7 +440,11 @@ class ShuffleHiveDrops(Toggle):
 
 
 class ShuffleGoldSkulltulas(Toggle):
-    """Gold Skulltulas drop shuffled checks instead of their tokens."""
+    """
+    Gold Skulltulas in the two Spider Houses drop shuffled checks instead of
+    their tokens. Shuffled Gold Skulltulas controls how many per house — the
+    rest keep their token, so all 30 per house stay obtainable.
+    """
     display_name = "Shuffle Gold Skulltulas"
     default = 0
 
@@ -478,6 +495,9 @@ class ShuffleShops(Toggle):
     """
     Shop inventories sell shuffled checks. Prices are randomized (0-200
     rupees), so wallet upgrades may be logically required for expensive slots.
+
+    The Curiosity Shop's special item and the Bomb Shop's two Bomb Bags are
+    always checks, even with this off.
     """
     display_name = "Shuffle Shops"
     default = 0
@@ -576,7 +596,10 @@ class TrapAmount(Range):
 
 
 class ShuffleTreeDrops(Toggle):
-    """Shuffle the items dropped by shaking trees into the location pool."""
+    """
+    Bonking each tree that shakes grants a shuffled check. Trees that don't
+    shake have no drops and are not checks.
+    """
     display_name = "Shuffle Tree Drops"
     default = 0
 
@@ -624,12 +647,14 @@ class TriforcePiecesRequired(Range):
     default = 15
 
 
-class SkulltulaTokensMax(Range):
+class SkulltulaShuffled(Range):
     """
-    Maximum Gold Skulltula tokens of each type (Swamp, Ocean) that can appear
-    in the item pool. Only applies when Shuffle Gold Skulltulas is on.
+    How many Gold Skulltulas in each Spider House are checks. The other
+    skulltulas in that house keep their own token, so all 30 tokens per house
+    are always obtainable. Which skulltulas are chosen varies per seed. Only
+    applies when Shuffle Gold Skulltulas is on.
     """
-    display_name = "Skulltula Tokens in Pool"
+    display_name = "Shuffled Gold Skulltulas"
     range_start = 1
     range_end = 30
     default = 30
@@ -638,8 +663,7 @@ class SkulltulaTokensMax(Range):
 class SkulltulaTokensRequired(Range):
     """
     Minimum Gold Skulltula tokens needed to obtain each Spider House reward.
-    Only applies when Shuffle Gold Skulltulas is on. Values above Skulltula
-    Tokens in Pool are clamped down to it.
+    Only applies when Shuffle Gold Skulltulas is on.
     """
     display_name = "Skulltula Tokens Required"
     range_start = 1
@@ -767,7 +791,7 @@ class MM2ShipOptions(PerGameCommonOptions):
     triforce_pieces_max: TriforcePiecesMax
     triforce_pieces_required: TriforcePiecesRequired
 
-    skulltula_tokens_max: SkulltulaTokensMax
+    skulltula_shuffled: SkulltulaShuffled
     skulltula_tokens_required: SkulltulaTokensRequired
 
     stray_fairies_max: StrayFairiesMax
@@ -891,7 +915,7 @@ mm2ship_option_groups = [
         TriforcePiecesRequired,
 
         # collectibles requirements/caps
-        SkulltulaTokensMax,
+        SkulltulaShuffled,
         SkulltulaTokensRequired,
         StrayFairiesMax,
         StrayFairiesRequired,
