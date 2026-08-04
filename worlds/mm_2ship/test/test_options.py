@@ -9,10 +9,15 @@ import unittest
 from Options import Choice, OptionError
 
 from . import MM2ShipTestBase
+from ..Enums import Items
 from ..LocationFilter import RCTYPE_OPTION
 from ..OptionData import RO_CHOICE_VALUES, RO_OPTIONS, RO_RANGES
 from ..Options import MM2ShipOptions, mm2ship_option_groups
 from ..Presets import mm2ship_options_presets
+from ..VanillaItems import vanilla_items
+
+# Heart Pieces sitting at their own locations, before starting_health adjusts them.
+VANILLA_HEART_PIECES = sum(1 for item in vanilla_items.values() if item is Items.HEART_PIECE)
 
 
 class TestDefault(MM2ShipTestBase):
@@ -122,6 +127,30 @@ class TestRequiredCountsClamped(MM2ShipTestBase):
     def test_required_clamped_to_max(self) -> None:
         self.assertEqual(self.world.options.triforce_pieces_required.value, 12)
         self.assertEqual(self.world.options.stray_fairies_required.value, 5)
+
+
+class TestStartingHealthAddsHeartPieces(MM2ShipTestBase):
+    """Below three hearts, GeneratePools.cpp puts four extra Heart Pieces in the
+    pool per missing heart so the player can climb back to capacity."""
+
+    options = {"starting_health": 1}
+
+    def test_extra_pieces_added(self) -> None:
+        pieces = sum(1 for item in self.multiworld.itempool
+                     if item.player == self.player and item.name == "Heart Piece")
+        self.assertEqual(pieces, VANILLA_HEART_PIECES + 8)
+
+
+class TestStartingHealthRemovesHeartPieces(MM2ShipTestBase):
+    """Above three hearts the pieces are redundant, so C++ drops four per extra
+    heart. They are progression-classified here, so nothing else would trim them."""
+
+    options = {"starting_health": 10}
+
+    def test_pieces_removed(self) -> None:
+        pieces = sum(1 for item in self.multiworld.itempool
+                     if item.player == self.player and item.name == "Heart Piece")
+        self.assertEqual(pieces, max(0, VANILLA_HEART_PIECES - 4 * (10 - 3)))
 
 
 class TestNoLogicGate(MM2ShipTestBase):

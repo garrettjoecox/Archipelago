@@ -9,7 +9,8 @@
 - If hosting or generating yourself, the `mm_2ship.apworld` from the same releases page.
 
 Important: the apworld and the game build are released together and must come from the same release — location IDs are
-shared between them.
+shared between them. If they don't match, the game tells you which 2S2H version the apworld was built for and refuses to
+touch your save, so grab the matching pair from the releases page rather than mixing versions.
 
 ## Installation
 

@@ -22,6 +22,7 @@ from .LogicRuntime import Solver
 from .OptionData import RO_OPTIONS
 from .Options import Logic, MM2ShipOptions, mm2ship_option_groups
 from .Presets import mm2ship_options_presets
+from .SourceInfo import BUILD_VERSION, SOURCE_COMMIT, SOURCE_DIRTY
 
 logger = logging.getLogger("MM2SHIP")
 
@@ -296,6 +297,16 @@ class MM2ShipWorld(World):
         }
         slot_data.update({
             "apworld_version": self.apworld_version,
+            # Wire-contract guard: location ids are RandoCheckId ordinals, so a
+            # game build from a different 2ship release would silently write
+            # items into the wrong checks. This is the CMake project version of
+            # the checkout this apworld was generated from, which is exactly
+            # what the client reports as gBuildVersion — it refuses to sync when
+            # the two disagree.
+            "game_build_version": BUILD_VERSION,
+            # Suffixed when the checkout had uncommitted changes, so a mismatch
+            # report never points at a commit that isn't what was generated.
+            "source_commit": SOURCE_COMMIT + ("-dirty" if SOURCE_DIRTY else ""),
             "true_no_logic": int(self.options.true_no_logic.value),
             "starting_clock": self.starting_clock_name,
             # Seed behind the Gold Skulltula subset, so Universal Tracker can

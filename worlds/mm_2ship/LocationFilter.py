@@ -41,6 +41,13 @@ RCTYPE_OPTION: dict[str, str] = {
     "RCTYPE_WONDER_ITEM": "shuffle_wonder_items",
 }
 
+# Scenes GeneratePools.cpp skips outright, whatever the options say. Majora's
+# boss room holds two pots that upstream deliberately never shuffles ("determine
+# if it's ok for these pots to be shuffled since we cannot return from here" —
+# Regions/Moon.cpp); as AP locations they would sit past the point of no return,
+# in the same region as the Victory event, and fill could hide progression there.
+NEVER_SHUFFLED_SCENES: frozenset[str] = frozenset({"SCENE_LAST_BS"})
+
 # Shop checks GeneratePools.cpp shuffles even with Shuffle Shops off: the
 # Curiosity Shop's special item and the Bomb Shop's two Bomb Bags (the first
 # one is progression, so it must be reachable through the pool).
@@ -93,6 +100,9 @@ def location_should_be_included(world: "MM2ShipWorld", loc: Locations) -> bool:
     vanilla item out of the pool: ItemPool builds from the locations that exist.
     """
     name = loc.name  # UPPER_SNAKE_CASE enum key
+
+    if LOCATION_SCENE.get(name) in NEVER_SHUFFLED_SCENES:
+        return False
 
     rctype = LOCATION_RCTYPE.get(name)
 

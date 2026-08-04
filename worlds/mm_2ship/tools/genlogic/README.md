@@ -29,6 +29,7 @@ python -m unittest discover -s worlds/mm_2ship/test -t .
 | `OptionData.py` | `StaticData/Options.cpp` | `RO_*` → (AP option attr, default) |
 | `LogicHelpersGen.py` | `Logic/Logic.h`, `GiveItem.cpp`, `Souls.cpp`, ... | constants, helper predicates, `CanKillEnemy`, item/flag grant maps |
 | `RegionData.py` | `Logic/Regions/*.cpp`, `Logic/Logic.cpp` | the full region graph with translated access rules |
+| `SourceInfo.py` | the 2ship checkout's git HEAD | which commit this data came from (and whether that tree was dirty) |
 
 Everything else in the apworld is hand-written and consumes the generated
 modules (most importantly `LogicRuntime.py`, the reachability solver).
@@ -72,10 +73,21 @@ no Python changes needed.
 - pool composition ← `GeneratePools.cpp` (in `ItemPool.py`)
 - own-dungeon placement ← `PlacementConstraints.cpp` (in `PlacementConstraints.py`)
 
+Two more sources are tracked without being ported: `CheckTracker.cpp
+RefreshChecksInLogic` (a third, independent implementation of the reachability
+fixpoint — the one players actually read, so it has to agree with the other
+two), and `GiveItem.cpp` (parsed for grant flags, but `extra_slot_grants` in
+`generate.py` is hand-written, so a *changed* grant would otherwise be silent).
+
 The generator hashes those C++ sources into `drift_hashes.json`. When any of
 them changes upstream, regeneration exits with code 2 and lists exactly which
 hand-ported pieces need review. After updating the Python ports (or confirming
 no change is needed), re-run with `--accept-drift` to record the new baseline.
+
+**The ledger catches "this file changed", not "the port covers it."** When it
+fires on `GeneratePools.cpp`, walk the C++ function top to bottom against
+`ItemPool.py` + `LocationFilter.py` rather than skimming the diff — unported
+branches (a whole-scene skip, a pool rebalance) look like no change at all.
 
 ## Wire-contract invariants (do not break)
 
@@ -84,6 +96,20 @@ no change is needed), re-run with `--accept-drift` to record the new baseline.
   `RandoCheckId` order exactly. The generator guarantees this — which also
   means ids shift when upstream inserts checks mid-enum. Game build and
   apworld must always be built from the same 2ship commit.
+
+  This is enforced, not just documented. `SourceInfo.BUILD_VERSION` is the
+  `project(2s2h VERSION x.y.z)` of the checkout the data came from — the same
+  value `mm/src/boot/build.c.in` turns into `gBuildVersion` — so it rides in
+  `slot_data` as `game_build_version` and `Archipelago.cpp VerifyBuildVersion`
+  compares it against `gBuildVersionMajor/Minor/Patch`, refusing to touch the
+  save on mismatch. Nothing is hand-maintained on either side: both numbers
+  come from that one CMake line.
+
+  That only holds while the version moves whenever the check table does, so
+  the generator warns when it sees the table change with the version standing
+  still (state in `location_table_guard.json`). Treat that warning as "bump
+  `project(2s2h VERSION ...)` before releasing" — during development, where
+  you rebuild the game from the same checkout anyway, it is safe to ignore.
 - **Item names must match `Items.cpp` exactly.** The client resolves received
   items by display name. Item *ids* are permanent: the generator re-reads
   `ItemData.py` and only ever appends (seeded originally from the hand-written

@@ -215,6 +215,24 @@ def create_item_pool(world: "MM2ShipWorld") -> None:
     # Gold Skulltula tokens need no trim: skulltula_shuffled already decided how
     # many of each house's skulltulas are locations, and each contributes a token.
 
+    # Step 3b: Rebalance Heart Pieces against starting health, mirroring
+    # GeneratePools.cpp. Hearts you start with make the matching pieces
+    # redundant, and starting below three hearts wants extras to climb back —
+    # four pieces per heart either way. Heart capacity is logic-relevant
+    # (CHECK_MAX_HP gates the Ghost Hut and Poe Sister checks), and Heart Pieces
+    # are progression-classified here, so the surplus can't be trimmed away as
+    # filler later; skipping this step would leave the pool visibly off.
+    starting_health = world.options.starting_health.value
+    if starting_health < 3:
+        for _ in range(4 * (3 - starting_health)):
+            world.multiworld.itempool.append(world.create_item("Heart Piece"))
+    elif starting_health > 3:
+        # C++ stops early when the pool runs out, so this is a best-effort trim.
+        to_remove = 4 * (starting_health - 3)
+        for item in [i for i in world.multiworld.itempool
+                     if i.player == world.player and i.name == "Heart Piece"][:to_remove]:
+            world.multiworld.itempool.remove(item)
+
     # Step 4: Add extra copies of items specified by the player
     for item_name, count in world.options.extra_items.items():
         for _ in range(count):

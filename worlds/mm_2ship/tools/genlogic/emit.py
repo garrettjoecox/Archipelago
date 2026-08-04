@@ -56,6 +56,9 @@ class EmitContext:
     token_scene_grants: dict[str, list[str]] | None = None  # SCENE_* -> [RI_*]
     owl_grants: dict[str, list[str]] | None = None           # OWL_WARP_* -> [RI_*]
     item_grants: dict[str, list[str]] | None = None          # ITEM_* -> [RI_*] (normalized)
+    source_commit: str = "unknown"                           # 2ship git HEAD
+    source_dirty: bool = False                               # 2ship tree had uncommitted changes
+    build_version: str = "0.0.0"                             # 2ship CMake project version
     half_day_ranges: list[tuple[int, int]] | None = None
     quest_to_ocarina: dict[str, str] | None = None
     quest_item_grants: dict[str, list[str]] | None = None    # QUEST_* -> [RI_*]
@@ -477,7 +480,31 @@ def emit_region_data(ctx: EmitContext) -> None:
 
 # ---------------------------------------------------------------------------
 
+def emit_source_info(ctx: EmitContext) -> None:
+    """Stamp which 2ship checkout this apworld was generated from.
+
+    Location ids are RandoCheckId ordinals, so an apworld and a game build from
+    different commits silently disagree about what every check is. BUILD_VERSION
+    is the wire guard against that: it comes from the same CMake project version
+    that becomes gBuildVersion in the client, so the two can be compared on
+    connect with nothing hand-maintained on either side. The commit is recorded
+    alongside it to make a mismatch diagnosable.
+    """
+    lines = [
+        BANNER,
+        '"""Provenance of the generated data: the 2ship checkout it came from."""\n',
+        "# 2ship's CMake project version — what the client reports as gBuildVersion.",
+        f"BUILD_VERSION: str = {ctx.build_version!r}\n",
+        f"SOURCE_COMMIT: str = {ctx.source_commit!r}\n",
+        "# True when that checkout had uncommitted changes, so the commit alone",
+        "# does not identify the sources this was built from.",
+        f"SOURCE_DIRTY: bool = {ctx.source_dirty!r}\n",
+    ]
+    _write(ctx.apworld_root / "SourceInfo.py", "\n".join(lines))
+
+
 def emit_all(ctx: EmitContext) -> None:
+    emit_source_info(ctx)
     emit_enums(ctx)
     emit_location_data(ctx)
     emit_vanilla_items(ctx)

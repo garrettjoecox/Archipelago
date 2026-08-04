@@ -82,6 +82,24 @@ class TestMinimumSkulltulaShuffle(MM2ShipTestBase):
     }
 
 
+class TestNeverShuffledScenes(MM2ShipTestBase):
+    """GeneratePools.cpp skips every SCENE_LAST_BS check outright. As AP
+    locations the two Majora's Lair pots would sit past the point of no return,
+    in the same region as the Victory event, where fill could hide progression."""
+
+    options = {"shuffle_pot_drops": True}
+
+    def test_majora_lair_pots_are_not_locations(self) -> None:
+        names = {loc.name for loc in self.multiworld.get_locations(self.player)}
+        for key in ("MOON_MAJORA_POT_01", "MOON_MAJORA_POT_02"):
+            self.assertNotIn(Locations[key].value, names,
+                             f"{key} is in SCENE_LAST_BS and must never be a location")
+
+    def test_other_pots_still_are(self) -> None:
+        names = {loc.name for loc in self.multiworld.get_locations(self.player)}
+        self.assertIn(Locations["SWAMP_SPIDER_HOUSE_MAIN_ROOM_LOWER_POT_01"].value, names)
+
+
 class TestAlwaysShuffledShopChecks(MM2ShipTestBase):
     """GeneratePools.cpp shuffles the Curiosity Shop special item and both Bomb
     Shop bomb bags even with shops off — the first bomb bag is progression."""

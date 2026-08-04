@@ -33,6 +33,18 @@ class TestUniversalTrackerRegen(MM2ShipTestBase):
         self.assertTrue(slot_data["shop_prices"], "shop prices missing despite shuffle_shops")
         self.assertIn("skulltula_seed", slot_data)
 
+    def test_slot_data_carries_the_wire_contract_guard(self) -> None:
+        """Location ids are RandoCheckId ordinals, so the client refuses to sync
+        unless the apworld was generated against the 2S2H version it is running.
+        The value has to be exactly what gBuildVersion formats to (major.minor.patch),
+        because the client string-compares the two."""
+        from ..SourceInfo import BUILD_VERSION
+
+        slot_data = self.world.fill_slot_data()
+        self.assertEqual(slot_data["game_build_version"], BUILD_VERSION)
+        self.assertRegex(BUILD_VERSION, r"^\d+\.\d+\.\d+$")
+        self.assertIn("source_commit", slot_data)
+
     def test_interpret_slot_data_returns_passthrough(self) -> None:
         slot_data = self.world.fill_slot_data()
         self.assertEqual(self.world.interpret_slot_data(slot_data), slot_data)

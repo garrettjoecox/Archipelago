@@ -18,6 +18,7 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -403,7 +404,48 @@ DRIFT_TARGETS = [
     ("Logic.h:MeetsMoonRequirements", "mm/2s2h/Rando/Logic/Logic.h", r"inline\s+bool\s+MeetsMoonRequirements\s*\("),
     ("Logic.h:OwnsHalfDayForMode", "mm/2s2h/Rando/Logic/Logic.h", r"inline\s+bool\s+OwnsHalfDayForMode\s*\("),
     ("Archipelago.cpp",          "mm/2s2h/Network/Archipelago/Archipelago.cpp", None),
+    # Third implementation of the reachability fixpoint, and the one players
+    # actually read. It has to agree with GlitchlessLogic/LogicRuntime.
+    ("CheckTracker.cpp:RefreshChecksInLogic", "mm/2s2h/Rando/CheckTracker/CheckTracker.cpp",
+     r"\bvoid\s+RefreshChecksInLogic\s*\("),
+    # Parsed for grant flags, but extra_slot_grants below is hand-written: a
+    # *changed* grant (rather than a removed one) would otherwise be silent.
+    ("GiveItem.cpp",             "mm/2s2h/Rando/GiveItem.cpp", None),
 ]
+
+
+def read_build_version(root: Path) -> str:
+    """The 2ship project version — what the client reports as gBuildVersion.
+
+    `mm/src/boot/build.c.in` interpolates CMake's project version into
+    gBuildVersionMajor/Minor/Patch, so reading it here gives the apworld the
+    same identity the game build will carry, with nothing hand-maintained on
+    either side.
+    """
+    cmake = root / "CMakeLists.txt"
+    if cmake.exists():
+        m = re.search(r"project\s*\([^)]*?\bVERSION\s+(\d+\.\d+\.\d+)", cmake.read_text(encoding="utf-8"))
+        if m:
+            return m.group(1)
+    sys.exit(f"ERROR: could not read project(... VERSION x.y.z) from {cmake}")
+
+
+def read_source_revision(root: Path) -> tuple[str, bool]:
+    """(commit, dirty) of the 2ship checkout, or ("unknown", False) without git."""
+    def git(*args: str) -> str | None:
+        try:
+            done = subprocess.run(("git", "-C", str(root), *args),
+                                  capture_output=True, text=True, timeout=30)
+        except (OSError, subprocess.SubprocessError):
+            return None
+        return done.stdout.strip() if done.returncode == 0 else None
+
+    commit = git("rev-parse", "HEAD")
+    if commit is None:
+        return "unknown", False
+    # --porcelain lists tracked modifications; non-empty means the commit alone
+    # does not describe what we just generated from.
+    return commit, bool(git("status", "--porcelain", "--untracked-files=no"))
 
 
 def compute_drift(root: Path) -> dict[str, str]:
@@ -444,7 +486,11 @@ def main() -> None:
     if not (root / "mm" / "2s2h" / "Rando").is_dir():
         sys.exit(f"ERROR: {root} does not look like a 2ship2harkinian checkout")
 
+    source_commit, source_dirty = read_source_revision(root)
+    build_version = read_build_version(root)
     print(f"[genlogic] reading 2ship sources from {root}")
+    print(f"[genlogic] build version {build_version}, source revision {source_commit[:12]}"
+          f"{' (DIRTY — uncommitted changes)' if source_dirty else ''}")
     src = Sources.load(root)
 
     # ---- enums ------------------------------------------------------------
@@ -857,8 +903,31 @@ def main() -> None:
         quest_item_grants=quest_item_grants,
         slider_ranges=slider_ranges,
         ro_choice_values=ro_choice_values,
+        source_commit=source_commit,
+        source_dirty=source_dirty,
+        build_version=build_version,
     )
     emit.emit_all(ctx)
+
+    # ---- location-table guard -----------------------------------------------------------
+    # The mismatch guard on the wire compares build versions, which only works
+    # if the version moves whenever the check table does. Nothing enforces that
+    # at release time, so say so here — the moment the table actually changes is
+    # the moment to bump project(2s2h VERSION ...).
+    table_hash = hashlib.sha256(
+        "\n".join(f"{i}:{rc}" for i, rc in enumerate(ctx.rc_order, start=1)).encode()
+    ).hexdigest()[:16]
+    guard_path = Path(__file__).with_name("location_table_guard.json")
+    previous = json.loads(guard_path.read_text()) if guard_path.exists() else {}
+    if (previous.get("table_hash") not in (None, table_hash)
+            and previous.get("build_version") == build_version):
+        print(f"\n[genlogic] LOCATION TABLE WARNING — the check table changed but the 2ship build "
+              f"version is still {build_version}.\n"
+              f"   AP location ids are RandoCheckId ordinals, so this apworld no longer matches any "
+              f"build that reports {build_version}.\n"
+              f"   Bump project(2s2h VERSION ...) in the 2ship CMakeLists.txt before releasing.")
+    guard_path.write_text(json.dumps(
+        {"build_version": build_version, "table_hash": table_hash}, indent=2) + "\n")
 
     # ---- drift ledger -------------------------------------------------------------------
     ledger_path = Path(__file__).with_name("drift_hashes.json")
