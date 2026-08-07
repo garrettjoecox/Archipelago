@@ -129,6 +129,87 @@ class TestRequiredCountsClamped(MM2ShipTestBase):
         self.assertEqual(self.world.options.stray_fairies_required.value, 5)
 
 
+class TestTriforceTrapJunkFill(MM2ShipTestBase):
+    """Test Triforce and Trap amounts. Includes useful Triforce count"""
+
+    options = {
+        "shuffle_triforce_pieces": True,
+        "triforce_pieces_max": 15,
+        "triforce_pieces_required": 10,
+        "shuffle_traps": True,
+        "trap_amount": 5,
+        "shuffle_pot_drops": True,
+        "shuffle_grass_drops": True,
+        "shuffle_enemy_drops": True,
+        "shuffle_freestanding_items": True,
+    }
+
+    def _count(self, pred) -> int:
+        return sum(1 for item in self.multiworld.itempool
+                   if item.player == self.player and pred(item))
+
+    def test_triforce_kept_and_classified(self) -> None:
+        from BaseClasses import ItemClassification as IC
+        piece = Items.TRIFORCE_PIECE.value
+        self.assertEqual(self._count(lambda i: i.name == piece), 15)
+        self.assertEqual(self._count(lambda i: i.name == piece and i.advancement), 10)
+        self.assertEqual(
+            self._count(lambda i: i.name == piece and i.classification == IC.useful), 5)
+
+    def test_traps_added(self) -> None:
+        self.assertEqual(self._count(lambda i: i.name == Items.TRAP.value), 5)
+
+
+class TestJunkFillsExactRemainder(MM2ShipTestBase):
+    """Test to make sure junk still fills leftover locations"""
+
+    options = {
+        "extra_items": {"Ice Arrows": 1},
+    }
+
+    def test_exactly_one_junk(self) -> None:
+        junk = sum(1 for item in self.multiworld.itempool
+                   if item.player == self.player and item.name == "Junk")
+        self.assertEqual(junk, 1)
+
+
+class TestTriforceMaxClampedToLocations(MM2ShipTestBase):
+    """Test clamping triforce pieces to the amount that can fit in the available locations"""
+
+    options = {
+        "shuffle_triforce_pieces": True,
+        "triforce_pieces_max": 1000,
+        "triforce_pieces_required": 10,
+    }
+
+    def test_max_clamped_required_kept(self) -> None:
+        pieces = sum(1 for item in self.multiworld.itempool
+                     if item.player == self.player and item.name == Items.TRIFORCE_PIECE.value)
+        self.assertLess(pieces, 1000)  # actually clamped down
+        self.assertEqual(self.world.options.triforce_pieces_max.value, pieces)
+        self.assertEqual(self.world.options.triforce_pieces_required.value, 10)
+        unfilled = len(self.multiworld.get_unfilled_locations(self.player))
+        pool = sum(1 for item in self.multiworld.itempool if item.player == self.player)
+        self.assertEqual(pool, unfilled)
+
+
+class TestTriforceNoRoomRaises(MM2ShipTestBase):
+    """Test OptionsError when it is impossible to place at least one Triforce"""
+
+    auto_construct = False
+    run_default_tests = False
+
+    def test_overflow_raises(self) -> None:
+        self.options = {
+            "shuffle_triforce_pieces": True,
+            "triforce_pieces_max": 15,
+            "triforce_pieces_required": 10,
+            "extra_items": {"Ice Arrows": 2000},
+        }
+        with self.assertRaises(OptionError):
+            self.world_setup()
+
+
 class TestStartingHealthAddsHeartPieces(MM2ShipTestBase):
     """Below three hearts, GeneratePools.cpp puts four extra Heart Pieces in the
     pool per missing heart so the player can climb back to capacity."""
