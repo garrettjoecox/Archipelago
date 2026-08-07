@@ -1,0 +1,13 @@
+# Files not needed to generate seeds. Patterns are gitignore-style and add to
+# data/GLOBAL.apignore (which already drops __pycache__, .git, archipelago.json...).
+
+# Unit tests — never imported during generation.
+/test/
+
+# genlogic code generator — only run offline to regenerate the *.py data files
+# from the 2ship C++ source; the world imports none of it.
+/tools/
+
+# WebHost setup guide / game page. Not needed to generate, but excluding it
+# removes the player-facing docs from the website. Uncomment for a gen-only build.
+#/docs/
