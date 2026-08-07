@@ -27,7 +27,6 @@ class TestUniversalTrackerRegen(MM2ShipTestBase):
         slot_data = self.world.fill_slot_data()
         for ap_name, _default in RO_OPTIONS.values():
             self.assertIn(ap_name, slot_data, f"slot_data missing option {ap_name}")
-        self.assertIn("true_no_logic", slot_data)
         self.assertIn("starting_clock", slot_data)
         self.assertIn("shop_prices", slot_data)
         self.assertTrue(slot_data["shop_prices"], "shop prices missing despite shuffle_shops")

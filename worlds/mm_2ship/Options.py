@@ -19,21 +19,6 @@ from Options import (
 # ---------------------------------------------------------------------------
 
 
-class TrueNoLogic(Toggle):
-    """
-    Ignore logic entirely: no location has an access rule and generation may
-    require items to be obtained in unintended ways (or be flat-out impossible
-    to complete without cheats). Use at your own risk.
-
-    This option is intentionally hidden from the website and the template
-    yaml — add "true_no_logic: true" to your yaml by hand to use it. The host
-    must also opt in by setting allow_true_no_logic: true under
-    mm_2ship_options in their host.yaml, otherwise generation fails.
-    """
-    display_name = "True No Logic"
-    visibility = Visibility.spoiler
-
-
 class Logic(Choice):
     """
     Which logic the randomizer uses to guarantee every location is reachable.
@@ -767,7 +752,6 @@ class MM2ShipOptions(PerGameCommonOptions):
     # -----------------------------
     # Generation
     # -----------------------------
-    true_no_logic: TrueNoLogic
     logic: Logic
 
     # -----------------------------
@@ -887,7 +871,6 @@ class MM2ShipOptions(PerGameCommonOptions):
 mm2ship_option_groups = [
     OptionGroup("Generation", [
         Logic,
-        TrueNoLogic,
     ]),
 
     OptionGroup("Randomizer Settings", [

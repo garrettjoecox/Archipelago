@@ -172,16 +172,9 @@ class TestNoLogicGate(MM2ShipTestBase):
         finally:
             MM2ShipWorld.settings.allow_true_no_logic = previous
 
-    def test_true_no_logic_requires_host_opt_in(self) -> None:
-        with self.assertRaises(OptionError):
-            self._run_with_gate({"true_no_logic": True}, allow=False)
-
     def test_no_logic_choice_requires_host_opt_in(self) -> None:
         with self.assertRaises(OptionError):
             self._run_with_gate({"logic": "no_logic"}, allow=False)
-
-    def test_no_logic_allowed_when_host_opts_in(self) -> None:
-        self._run_with_gate({"true_no_logic": True}, allow=True)
 
 
 class TestOptionMirror(unittest.TestCase):

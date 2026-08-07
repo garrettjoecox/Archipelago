@@ -181,14 +181,12 @@ class MM2ShipWorld(World):
                 option = getattr(self.options, ap_name, None)
                 if option is not None and ap_name in passthrough:
                     option.value = int(passthrough[ap_name])
-            if "true_no_logic" in passthrough:
-                self.options.true_no_logic.value = int(passthrough["true_no_logic"])
             self.shop_prices = {str(k): int(v) for k, v in passthrough.get("shop_prices", {}).items()}
         else:
             if not self.use_logic() and not self.settings.allow_true_no_logic:
                 raise OptionError(
                     f"MM2Ship (player {self.player}): no-logic generation "
-                    f"(true_no_logic, or logic: no_logic/nearly_no_logic) requires the host "
+                    f"(logic: no_logic/nearly_no_logic) requires the host "
                     f"to set allow_true_no_logic: true under mm_2ship_options in host.yaml."
                 )
 
@@ -307,7 +305,6 @@ class MM2ShipWorld(World):
             # Suffixed when the checkout had uncommitted changes, so a mismatch
             # report never points at a commit that isn't what was generated.
             "source_commit": SOURCE_COMMIT + ("-dirty" if SOURCE_DIRTY else ""),
-            "true_no_logic": int(self.options.true_no_logic.value),
             "starting_clock": self.starting_clock_name,
             # Seed behind the Gold Skulltula subset, so Universal Tracker can
             # rebuild the identical location list (see roll_skulltula_subset).
