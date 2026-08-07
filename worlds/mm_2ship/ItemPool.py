@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import logging
+from .Enums import Items
 from typing import TYPE_CHECKING
 
 from BaseClasses import ItemClassification as IC
+
+logger = logging.getLogger("MM2SHIP")
 
 from .PlacementConstraints import PLACEMENT_OPTION_BY_TYPE, START_WITH, placement_mode
 
@@ -178,11 +182,6 @@ def create_item_pool(world: "MM2ShipWorld") -> None:
     if world.options.shuffle_tycoon_wallet.value:
         world.multiworld.itempool.append(world.create_item("Progressive Wallet"))
 
-    # Add triforce pieces if shuffled
-    if world.options.shuffle_triforce_pieces.value:
-        for _ in range(world.options.triforce_pieces_max.value):
-            world.multiworld.itempool.append(world.create_item("Piece of the Triforce"))
-
     # Add the Skeleton Key if shuffled. This is a standalone item on top of each
     # dungeon's own Small Keys already in the pool — collecting it instantly grants
     # the max Small Keys for every dungeon at once (see GiveItem.cpp's RI_SKELETON_KEY case).
@@ -286,44 +285,75 @@ def create_plentiful_and_trap_items(world: "MM2ShipWorld") -> None:
         for item_name in plentiful_candidates:
             world.multiworld.itempool.append(world.create_item(item_name))
 
-    # Add traps if shuffled
-    if world.options.shuffle_traps.value:
-        for _ in range(world.options.trap_amount.value):
-            world.multiworld.itempool.append(world.create_item("Knockoff Item"))
-
-    # Balance the pool against the location count.
-    # C++ tolerates an oversized pool ("will get sorted automatically if there
-    # is enough space"); AP needs an exact match, so surplus filler is trimmed.
-    # Locationless additions (enemy souls, triforce pieces, ...) can exceed the
-    # junk head-room when few shuffle options are on — that's a real option
-    # conflict the player must resolve, so it raises instead of failing fill.
+    # Balance the pool to exactly the location count, filling by priority:
+    # mandatory items first, then as many triforce pieces as fit within max, then
+    # traps up to trap_amount, then junk filler for whatever is left. Triforce and
+    # traps are both created here so the fill order is explicit.
     from BaseClasses import ItemClassification
     from Options import OptionError
 
-    items_for_this_player = sum(1 for item in world.multiworld.itempool if item.player == world.player)
-    locations_for_this_player = len(world.multiworld.get_unfilled_locations(world.player))
-    filler_needed = locations_for_this_player - items_for_this_player
+    locations = len(world.multiworld.get_unfilled_locations(world.player))
+    is_filler = lambda i: i.classification == ItemClassification.filler
 
-    if filler_needed > 0:
-        for _ in range(filler_needed):
-            filler_name = get_filler_item(world)
-            world.multiworld.itempool.append(world.create_item(filler_name))
-    elif filler_needed < 0:
-        removable = [
-            item for item in world.multiworld.itempool
-            if item.player == world.player and item.classification == ItemClassification.filler
-        ]
-        world.random.shuffle(removable)
-        to_remove = -filler_needed
-        if len(removable) < to_remove:
-            raise OptionError(
-                f"MM2Ship (player {world.player}): {items_for_this_player} items but only "
-                f"{locations_for_this_player} locations, and only {len(removable)} filler items "
-                f"can be trimmed. Enable more shuffle options (pots, grass, enemy drops, ...) "
-                f"to make room for souls/triforce pieces/etc."
-            )
-        for item in removable[:to_remove]:
+    def _count(pred) -> int:
+        return sum(1 for i in world.multiworld.itempool if i.player == world.player and pred(i))
+
+    def _trim(pred, budget: int) -> None:
+        matches = [i for i in world.multiworld.itempool if i.player == world.player and pred(i)]
+        world.random.shuffle(matches)
+        for item in matches[:max(0, budget)]:
             world.multiworld.itempool.remove(item)
+
+    # Slots left for triforce + traps + filler once the mandatory items are placed.
+    # (Base junk filler already in the pool is the lowest priority, so it doesn't
+    # count as mandatory.)
+    room = locations - _count(lambda i: not is_filler(i))
+    if room < 0:
+        raise OptionError(
+            f"MM2Ship (player {world.player}): mandatory items exceed the {locations} "
+            f"available locations by {-room}. Enable more shuffle options "
+            f"(pots, grass, enemy drops, ...) or turn off plentiful_items."
+        )
+
+    # All of the items below are essentially fighting for left over slots. Start with most important (Triforce Hunt pieces) to least important (actual junk)
+    # Do this instead of the previous solution because this will prevent failed generations due to OptionErrors if players set Triforce Pieces way higher than the amount of locations available
+    # Triforce fills first
+    if world.options.shuffle_triforce_pieces.value:
+        keep = min(world.options.triforce_pieces_max.value, room)
+        if keep < 1:
+            raise OptionError(
+                f"MM2Ship (player {world.player}): triforce hunt is on but the "
+                f"{locations} available locations are all taken by mandatory items, "
+                f"leaving no room for triforce pieces. Enable more shuffle options "
+                f"(pots, grass, enemy drops, ...) or turn off plentiful_items."
+            )
+        required = min(world.options.triforce_pieces_required.value, keep)
+        pieces = [world.create_item(Items.TRIFORCE_PIECE.value) for _ in range(keep)]
+        # Set excess to useful
+        for piece in pieces[required:]:
+            piece.classification = ItemClassification.useful
+        world.multiworld.itempool.extend(pieces)
+        if (keep, required) != (world.options.triforce_pieces_max.value,
+                                world.options.triforce_pieces_required.value):
+            logger.warning(
+                "MM2Ship (player %s): %s locations, triforce max %s -> %s, required %s -> %s.",
+                world.player, locations, world.options.triforce_pieces_max.value, keep,
+                world.options.triforce_pieces_required.value, required)
+        world.options.triforce_pieces_max.value = keep
+        world.options.triforce_pieces_required.value = required
+        room -= keep
+
+    # Traps fill next, up to trap_amount
+    traps = min(world.options.trap_amount.value, room) if world.options.shuffle_traps.value else 0
+    world.options.trap_amount.value = traps
+    for _ in range(traps):
+        world.multiworld.itempool.append(world.create_item(Items.TRAP.value))
+    room -= traps
+
+    # Junk filler takes whatever is left
+    _trim(is_filler, _count(is_filler) - room)
+    for _ in range(room - _count(is_filler)):
+        world.multiworld.itempool.append(world.create_item(get_filler_item(world)))
 
 
 def get_filler_item(world: "MM2ShipWorld") -> str:
