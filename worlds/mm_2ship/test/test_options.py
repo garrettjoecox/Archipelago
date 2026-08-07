@@ -176,6 +176,9 @@ class TestNoLogicGate(MM2ShipTestBase):
         with self.assertRaises(OptionError):
             self._run_with_gate({"logic": "no_logic"}, allow=False)
 
+    def test_no_logic_allowed_when_host_opts_in(self) -> None:
+        self._run_with_gate({"logic": "no_logic"}, allow=True)
+
 
 class TestOptionMirror(unittest.TestCase):
     """The AP options must mirror the 2ship sources (via the generated
