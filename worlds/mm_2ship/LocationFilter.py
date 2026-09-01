@@ -13,13 +13,17 @@ from typing import TYPE_CHECKING
 
 from .Enums import Locations
 from .LocationData import LOCATION_RCTYPE, LOCATION_SCENE
+from .OptionData import RO_CHOICE_VALUES
+from .VanillaItems import vanilla_items
 
 if TYPE_CHECKING:
     from . import MM2ShipWorld
 
 # C++ RandoCheckType -> the MM2ShipOptions attribute that enables it. A type
-# absent from this dict is always active (RCTYPE_CHEST, RCTYPE_NPC, RCTYPE_SONG,
-# RCTYPE_STRAY_FAIRY, RCTYPE_HEART, RCTYPE_MINIGAME, and so on).
+# absent from this dict is always active (RCTYPE_CHEST, RCTYPE_NPC,
+# RCTYPE_STRAY_FAIRY, RCTYPE_HEART, RCTYPE_MINIGAME, and so on). Only plain
+# on/off options belong here. RCTYPE_SONG and RCTYPE_REMAINS use three-way
+# Choices and are handled separately.
 RCTYPE_OPTION: dict[str, str] = {
     "RCTYPE_BARREL":      "shuffle_barrel_drops",
     "RCTYPE_BEEHIVE":     "shuffle_hive_drops",
@@ -56,6 +60,23 @@ ALWAYS_SHUFFLED_SHOP_CHECKS: frozenset[str] = frozenset({
     "BOMB_SHOP_ITEM_04_OR_CURIOSITY_SHOP_ITEM",
     "CURIOSITY_SHOP_SPECIAL_ITEM",
 })
+
+# RandoOptionSongShuffle ordinals, from the generated Types.h mirror.
+SONG_LOCATIONS = RO_CHOICE_VALUES["RO_SONG_SHUFFLE_SONG_LOCATIONS"]
+SONG_VANILLA = RO_CHOICE_VALUES["RO_SONG_SHUFFLE_VANILLA"]
+
+SONG_LOCATION_KEYS: tuple[str, ...] = tuple(
+    key for key, rctype in LOCATION_RCTYPE.items() if rctype == "RCTYPE_SONG"
+)
+
+# Port of PlacementConstraints.cpp's IsSongLocationItem(). Reading it off the
+# check table means a song added or moved upstream needs no change here. Keyed
+# on the item, and the extra songs have no vanilla check to be confined to.
+SONG_LOCATION_ITEM_NAMES: frozenset[str] = frozenset(
+    vanilla_items[Locations[key]].value
+    for key in SONG_LOCATION_KEYS
+    if Locations[key] in vanilla_items
+)
 
 # Every Gold Skulltula, grouped by Spider House scene: the population
 # roll_skulltula_subset draws each house's checks from. Built in generated
@@ -112,6 +133,11 @@ def location_should_be_included(world: "MM2ShipWorld", loc: Locations) -> bool:
         option = getattr(world.options, option_name, None)
         if option is not None and not option.value:
             return name in ALWAYS_SHUFFLED_SHOP_CHECKS
+
+    # Only Vanilla drops the song checks. Under Song Locations they all stay
+    # checks, and the confinement happens at fill time instead.
+    if rctype == "RCTYPE_SONG" and world.options.shuffle_songs.value == SONG_VANILLA:
+        return False
 
     # Only skulltula_shuffled of each Spider House's 30 skulltulas are checks
     # (see roll_skulltula_subset). Dropping the rest here is what makes the

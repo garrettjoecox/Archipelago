@@ -32,7 +32,15 @@ the Randomizer section works in Archipelago saves, as do the usual 2S2H enhancem
 
 ### Configure Your YAML File
 
-In the Archipelago Launcher, choose "Install APWorld" and pick the `mm_2ship.apworld` file that came with your
-download. Then choose "Generate Template Options", which writes template yamls into your Archipelago installation
-under `Players/Templates`. Edit `2 Ship 2 Harkinian (MM).yaml` in your text editor of choice; every option carries a
-description of what it does.
+The easiest way is to let the game write it for you. Set up the seed you want in 2S2H's Randomizer menu as usual,
+then open the ESC menu, go to Network > Archipelago and press "Export YAML" under "Player Options File". That writes
+every randomizer option you have set, plus your starting items and excluded checks, to
+`archipelago/<slot name>.yaml` in your 2S2H folder, and opens that folder for you. Copy the file into your
+Archipelago installation's `Players` folder, or upload it at https://archipelago.gg/uploads. Options that only exist
+in Archipelago, such as `progression_balancing` and `accessibility`, are left at their defaults and can be added by
+hand afterwards.
+
+To write one from scratch instead: in the Archipelago Launcher, choose "Install APWorld" and pick the
+`mm_2ship.apworld` file that came with your download. Then choose "Generate Template Options", which writes template
+yamls into your Archipelago installation under `Players/Templates`. Edit `2 Ship 2 Harkinian (MM).yaml` in your text
+editor of choice; every option carries a description of what it does.

@@ -1,16 +1,20 @@
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 from BaseClasses import CollectionState, Item
 from Fill import fill_restrictive
 
 from .Enums import Items, Locations
-from .LocationData import LOCATION_DUNGEON
+from .LocationData import LOCATION_DUNGEON, LOCATION_RCTYPE
+from .LocationFilter import SONG_LOCATIONS, SONG_LOCATION_ITEM_NAMES
 from .OptionData import RO_CHOICE_VALUES
 
 if TYPE_CHECKING:
     from . import MM2ShipWorld
+
+logger = logging.getLogger("MM2SHIP")
 
 # LOCATION_DUNGEON is keyed by the Locations enum's attribute name (e.g.
 # "WOODFALL_TEMPLE_BOSS_KEY_CHEST"), while AP Location objects are named after
@@ -35,6 +39,21 @@ PLACEMENT_OPTION_BY_TYPE: dict[str, str] = {
 OWN_DUNGEON = RO_CHOICE_VALUES["RO_DUNGEON_ITEM_OWN_DUNGEON"]
 START_WITH = RO_CHOICE_VALUES["RO_DUNGEON_ITEM_START_WITH"]
 VANILLA = RO_CHOICE_VALUES["RO_DUNGEON_ITEM_VANILLA"]
+
+# RandoOptionRemainsShuffle ordinals. A different enum from the placement one
+# above. Own Dungeon is 2 here and 1 there, so never share a constant.
+REMAINS_VANILLA = RO_CHOICE_VALUES["RO_REMAINS_SHUFFLE_VANILLA"]
+REMAINS_OWN_DUNGEON = RO_CHOICE_VALUES["RO_REMAINS_SHUFFLE_OWN_DUNGEON"]
+
+# CONFINEMENT_GROUP_SONGS on the C++ side, where it is an int past the last
+# dungeon index. Groups are only ever compared for equality, so a string works.
+SONGS_GROUP = "SONGS"
+
+# Keyed by display name like LOCATION_VALUE_TO_DUNGEON, for Location.name lookups.
+SONG_LOCATION_VALUES: frozenset[str] = frozenset(
+    Locations[key].value for key, rctype in LOCATION_RCTYPE.items()
+    if rctype == "RCTYPE_SONG" and key in Locations.__members__
+)
 
 # The one Stray Fairy that belongs to no dungeon, so DungeonItemToDungeon()
 # returns -1 for it while DungeonItemPlacementOption() still routes it through
@@ -86,45 +105,73 @@ def vanilla_placed_item_names(world: "MM2ShipWorld") -> frozenset[str]:
     return frozenset(names)
 
 
-def confine_dungeon_items(world: "MM2ShipWorld") -> None:
-    """Pre-place dungeon items into their own dungeon under Own Dungeon.
+def confinement_groups(world: "MM2ShipWorld") -> dict[str, str]:
+    """AP item name -> confinement group, for every item this seed confines.
 
-    Mirrors the confinement PlacementConstraints.cpp does with
-    RandoItemIdToDungeon/IsItemAllowedAtCheck for the standalone randomizer.
-    Must run from World.pre_fill(), after create_items() has filled
-    multiworld.itempool and before the main fill consumes it.
-
-    The Skeleton Key is deliberately left out. It has no vanilla location and
-    grants every dungeon's keys at once (GiveItem.cpp), so there is no single
-    dungeon to confine it to.
+    Port of PlacementConstraints.cpp's RandoItemIdToConfinementGroup(). An item
+    the C++ answers -1 for is absent here. The Skeleton Key is left out on
+    purpose. It has no vanilla location and grants every dungeon's keys at once
+    (GiveItem.cpp), so there is no single dungeon to confine it to.
     """
-    # Item name -> owning dungeon, for every type whose option is Own Dungeon.
-    # Dropping the dungeon-less items is RandoItemIdToDungeon() returning -1:
-    # they can't be confined, and vanilla_placed_item_names pins them instead.
-    confined_name_to_dungeon: dict[str, str] = {
+    groups: dict[str, str] = {}
+
+    # Dropping the dungeon-less items is RandoItemIdToDungeon() returning -1.
+    # Nothing to confine them to, so vanilla_placed_item_names pins them to
+    # their own check instead.
+    groups.update({
         name: dungeon
         for name, dungeon in dungeon_items_for_mode(world, OWN_DUNGEON).items()
         if dungeon is not None
-    }
-    if not confined_name_to_dungeon:
+    })
+
+    if world.options.shuffle_boss_remains.value == REMAINS_OWN_DUNGEON:
+        for dungeon, item_names in DUNGEON_ITEM_NAMES.items():
+            groups[item_names["remains"]] = dungeon
+
+    # Last, so a song wins over any dungeon answer. The C++ checks songs first.
+    if world.options.shuffle_songs.value == SONG_LOCATIONS:
+        for name in SONG_LOCATION_ITEM_NAMES:
+            groups[name] = SONGS_GROUP
+
+    return groups
+
+
+def location_confinement_group(world: "MM2ShipWorld", location_name: str) -> str | None:
+    """Port of CheckIdToConfinementGroup(). None for a check in no group."""
+    if (world.options.shuffle_songs.value == SONG_LOCATIONS
+            and location_name in SONG_LOCATION_VALUES):
+        return SONGS_GROUP
+    return LOCATION_VALUE_TO_DUNGEON.get(location_name)
+
+
+def confine_items(world: "MM2ShipWorld") -> None:
+    """Pre-place every confined item inside its own group's locations.
+
+    Mirrors what PlacementConstraints.cpp does with IsItemAllowedAtCheck for
+    the standalone randomizer. Must run from World.pre_fill(), after
+    create_items() has filled multiworld.itempool and before the main fill
+    consumes it.
+    """
+    confined_name_to_group = confinement_groups(world)
+    if not confined_name_to_group:
         return
 
-    # Pull this world's confined items out of the multiworld pool, per dungeon.
-    confined_by_dungeon: dict[str, list[Item]] = {}
+    # Pull this world's confined items out of the multiworld pool, per group.
+    confined_by_group: dict[str, list[Item]] = {}
     remaining_pool: list[Item] = []
     for item in world.multiworld.itempool:
-        dungeon = confined_name_to_dungeon.get(item.name) if item.player == world.player else None
-        if dungeon is not None:
-            confined_by_dungeon.setdefault(dungeon, []).append(item)
+        group = confined_name_to_group.get(item.name) if item.player == world.player else None
+        if group is not None:
+            confined_by_group.setdefault(group, []).append(item)
         else:
             remaining_pool.append(item)
-    if not confined_by_dungeon:
+    if not confined_by_group:
         return
     world.multiworld.itempool[:] = remaining_pool
 
     # While these items are neither in the pool nor placed, expose them via
     # get_pre_fill_items so other worlds' all_state stays correct.
-    world.pre_fill_items = [item for items in confined_by_dungeon.values() for item in items]
+    world.pre_fill_items = [item for items in confined_by_group.values() for item in items]
 
     # Base state: everything else this player can end up with, meaning the rest
     # of their own pool plus a sweep restricted to this world's locations.
@@ -136,24 +183,33 @@ def confine_dungeon_items(world: "MM2ShipWorld") -> None:
             base_state.collect(item, prevent_sweep=True)
     base_state.sweep_for_advancements(locations=world.get_locations())
 
-    dungeon_locations: dict[str, list] = {}
+    group_locations: dict[str, list] = {}
     for location in world.multiworld.get_unfilled_locations(world.player):
-        dungeon = LOCATION_VALUE_TO_DUNGEON.get(location.name)
-        if dungeon:
-            dungeon_locations.setdefault(dungeon, []).append(location)
+        group = location_confinement_group(world, location.name)
+        if group:
+            group_locations.setdefault(group, []).append(location)
 
-    for dungeon, confined_items in confined_by_dungeon.items():
-        locations = [loc for loc in dungeon_locations.get(dungeon, []) if loc.item is None]
+    def give_up(group: str, leftovers: list[Item]) -> None:
+        """Hand the leftovers back to the general pool. The option did not
+        fully take, so it warns."""
+        logger.warning(
+            "MM2Ship (player %s): no room left in %s for %s; "
+            "they fall back to the general item pool.",
+            world.player, group, sorted(item.name for item in leftovers))
+        world.multiworld.itempool.extend(leftovers)
+
+    for group, confined_items in confined_by_group.items():
+        locations = [loc for loc in group_locations.get(group, []) if loc.item is None]
         if not locations:
-            world.multiworld.itempool.extend(confined_items)
+            give_up(group, confined_items)
             continue
 
-        # This dungeon's fill can depend on the other dungeons' confined items,
+        # This group's fill can depend on the other groups' confined items,
         # including ones earlier iterations already placed. Count the still
         # unplaced ones as owned and re-sweep to pick up the placed ones.
         state = base_state.copy()
-        for other_dungeon, other_items in confined_by_dungeon.items():
-            if other_dungeon != dungeon:
+        for other_group, other_items in confined_by_group.items():
+            if other_group != group:
                 for item in other_items:
                     if item.location is None:
                         state.collect(item, prevent_sweep=True)
@@ -161,16 +217,17 @@ def confine_dungeon_items(world: "MM2ShipWorld") -> None:
 
         world.random.shuffle(locations)
 
-        # allow_partial: when a dungeon has no room for all of its own confined
-        # items (other options excluded most of its locations, say), the
+        # allow_partial: when a group has no room for all of its own confined
+        # items (other options excluded most of a dungeon's locations, say), the
         # leftovers fall back to the main pool instead of failing generation.
+        # fill_restrictive removes what it places, leaving the rest behind.
         fill_restrictive(
             world.multiworld, state, locations, confined_items,
             single_player_placement=True, lock=True, allow_excluded=True,
-            allow_partial=True, name=f"MM2Ship {dungeon}",
+            allow_partial=True, name=f"MM2Ship {group}",
         )
 
         if confined_items:
-            world.multiworld.itempool.extend(confined_items)
+            give_up(group, confined_items)
 
     world.pre_fill_items = []

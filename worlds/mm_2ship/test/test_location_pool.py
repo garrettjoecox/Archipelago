@@ -1,14 +1,16 @@
 """
 Which checks become AP locations, where that isn't a plain on/off toggle:
-the per-Spider-House Gold Skulltula subset, and the shop checks 2ship shuffles
-even with Shuffle Shops off.
+the per-Spider-House Gold Skulltula subset, the shop checks 2ship shuffles even
+with Shuffle Shops off, and the song checks under shuffle_songs = Vanilla.
 """
 
 from collections import Counter
 
 from . import MM2ShipTestBase
 from ..Enums import Locations
-from ..LocationFilter import ALWAYS_SHUFFLED_SHOP_CHECKS, SKULLTULAS_BY_SCENE
+from ..LocationFilter import (
+    ALWAYS_SHUFFLED_SHOP_CHECKS, SKULLTULAS_BY_SCENE, SONG_LOCATION_ITEM_NAMES, SONG_LOCATION_KEYS,
+)
 from ..ShopLocations import shop_locations
 
 SKULLTULAS_PER_HOUSE = 30
@@ -124,3 +126,49 @@ class TestAlwaysShuffledShopChecks(MM2ShipTestBase):
         """They are bought, not picked up, so logic needs a price for each."""
         for key in ALWAYS_SHUFFLED_SHOP_CHECKS:
             self.assertIn(f"RC_{key}", self.world.shop_prices)
+
+
+class TestSongsVanilla(MM2ShipTestBase):
+    """shuffle_songs = Vanilla is GeneratePools.cpp skipping every RCTYPE_SONG
+    check. They are not AP locations either, and the solver hands out their
+    songs when the check is reached, the way the unshuffled game does."""
+
+    options = {"shuffle_songs": "vanilla"}
+
+    def test_song_checks_are_not_locations(self) -> None:
+        names = {loc.name for loc in self.multiworld.get_locations(self.player)}
+        for key in SONG_LOCATION_KEYS:
+            self.assertNotIn(Locations[key].value, names,
+                             f"{key} must not be a location with songs on Vanilla")
+
+    def test_no_song_in_the_item_pool(self) -> None:
+        pooled = sorted({item.name for item in self.multiworld.itempool
+                         if item.player == self.player and item.name in SONG_LOCATION_ITEM_NAMES})
+        self.assertFalse(pooled, f"vanilla songs still in the pool: {pooled}")
+
+    def test_the_solver_self_grants_them(self) -> None:
+        self_granted = self.world.logic.disabled_check_vanilla
+        for key in SONG_LOCATION_KEYS:
+            self.assertIn(f"RC_{key}", self_granted,
+                          f"{key} is not a location, so the solver has to grant its song")
+
+
+class TestSongsAnywhere(MM2ShipTestBase):
+    """The default. Song checks are ordinary checks and their songs ordinary
+    pool items, free to land anywhere."""
+
+    options = {"shuffle_songs": "anywhere"}
+
+    def test_song_checks_are_locations(self) -> None:
+        names = {loc.name for loc in self.multiworld.get_locations(self.player)}
+        for key in SONG_LOCATION_KEYS:
+            self.assertIn(Locations[key].value, names)
+
+    def test_songs_are_pooled_and_unconfined(self) -> None:
+        pooled = {item.name for item in self.multiworld.itempool
+                  if item.player == self.player and item.name in SONG_LOCATION_ITEM_NAMES}
+        self.assertTrue(pooled, "no songs reached the item pool")
+        # Nothing is pre-placed, so every song check is still open for the fill.
+        for key in SONG_LOCATION_KEYS:
+            self.assertFalse(
+                self.multiworld.get_location(Locations[key].value, self.player).locked)

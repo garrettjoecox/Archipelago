@@ -116,7 +116,7 @@ class MM2ShipWorld(World):
         self.skulltula_seed: int = 0
         self.skulltula_shuffled_locations: frozenset[str] = frozenset()
 
-        # Non-empty only while confine_dungeon_items runs, so other worlds'
+        # Non-empty only while confine_items runs, so other worlds'
         # all_state can still see items that are neither pooled nor placed.
         self.pre_fill_items: list[Item] = []
 
@@ -272,14 +272,15 @@ class MM2ShipWorld(World):
         return list(self.pre_fill_items)
 
     def pre_fill(self) -> None:
-        from .PlacementConstraints import confine_dungeon_items
-        confine_dungeon_items(self)
+        from .PlacementConstraints import confine_items
+        confine_items(self)
 
     def set_rules(self) -> None:
         # The Victory event's own location rule (in Regions.py) is what encodes
         # beating Majora or finishing the triforce hunt, matching whatever makes
         # the C++ client send GOAL.
-        self.set_completion_rule(lambda state: state.has("Victory", self.player))
+        self.multiworld.completion_condition[self.player] = (
+            lambda state: state.has("Victory", self.player))
 
     # ---------------------------------------------------------------- slot data
 

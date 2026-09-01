@@ -369,7 +369,8 @@ def emit_logic_helpers(ctx: EmitContext) -> None:
         d = dungeon.replace("DUNGEON_SCENE_INDEX_", "")
         kind = ("small_key" if "SMALL_KEY" in ri else
                 "boss_key" if "BOSS_KEY" in ri else
-                "stray_fairy" if "STRAY_FAIRY" in ri else None)
+                "stray_fairy" if "STRAY_FAIRY" in ri else
+                "remains" if "REMAINS" in ri else None)
         if kind and ri in ctx.items:
             dungeon_items.setdefault(d, {})[kind] = item_display(ctx, ri)
     lines.append("DUNGEON_ITEMS = {")

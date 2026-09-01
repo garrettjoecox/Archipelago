@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import logging
-from .Enums import Items
+from .Enums import Items, Locations
 from typing import TYPE_CHECKING
 
 from BaseClasses import ItemClassification as IC
 
 logger = logging.getLogger("MM2SHIP")
 
-from .PlacementConstraints import START_WITH, dungeon_items_for_mode, placement_mode
+from .LocationFilter import SONG_LOCATIONS, SONG_LOCATION_ITEM_NAMES
+from .PlacementConstraints import (
+    SONG_LOCATION_VALUES, START_WITH, dungeon_items_for_mode, placement_mode,
+)
 
 if TYPE_CHECKING:
     from . import MM2ShipWorld
@@ -191,6 +194,46 @@ def create_item_pool(world: "MM2ShipWorld") -> None:
         for _ in range(count):
             world.multiworld.itempool.append(world.create_item(item_name))
 
+    # Last, because it counts the songs the steps above left in the pool.
+    junk_surplus_song_locations(world)
+
+
+def junk_surplus_song_locations(world: "MM2ShipWorld") -> None:
+    """Mirror of the tail of GeneratePools.cpp under Song Locations.
+
+    A song check with no song left to hold gets junk locked onto it. Dropping
+    the location instead would hand the player the song for free. The client
+    resets every check to unshuffled and only re-marks the ones the server
+    sends, so a dropped song check goes back to vanilla behavior.
+
+    Which songs stay out of the pool depends on the options. By default it is
+    just the Song of Time, and upstream junks the Song of Healing check first
+    so a player starting with the Song of Time is not handed a second one.
+    """
+    if world.options.shuffle_songs.value != SONG_LOCATIONS:
+        return
+
+    song_items = sum(1 for item in world.multiworld.itempool
+                     if item.player == world.player and item.name in SONG_LOCATION_ITEM_NAMES)
+    song_locations = [location for location in world.multiworld.get_unfilled_locations(world.player)
+                      if location.name in SONG_LOCATION_VALUES]
+
+    # More songs than checks (extra_items can do it) underflows upstream's
+    # size_t. Here it just means there is nothing to junk.
+    surplus = len(song_locations) - song_items
+    if surplus <= 0:
+        return
+
+    world.random.shuffle(song_locations)
+    healing = Locations.STARTING_ITEM_SONG_OF_HEALING.value
+    for index, location in enumerate(song_locations):
+        if location.name == healing:
+            song_locations[0], song_locations[index] = song_locations[index], song_locations[0]
+            break
+
+    for location in song_locations[:surplus]:
+        location.place_locked_item(world.create_item(Items.JUNK.value))
+
 
 def create_plentiful_and_trap_items(world: "MM2ShipWorld") -> None:
     """Duplicate majors under plentiful_items, then top the pool up to the
@@ -224,6 +267,11 @@ def create_plentiful_and_trap_items(world: "MM2ShipWorld") -> None:
             if item.name == "Heart Container":
                 continue
             if item.name == "Heart Piece":
+                continue
+            # A duplicate song has nowhere to go under Song Locations, since
+            # there are only ever as many song checks as songs.
+            if (world.options.shuffle_songs.value == SONG_LOCATIONS
+                    and item.name in SONG_LOCATION_ITEM_NAMES):
                 continue
 
             if item.classification in (IC.progression, IC.useful):

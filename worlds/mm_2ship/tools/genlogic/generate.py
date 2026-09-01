@@ -54,6 +54,7 @@ class Sources:
     z64scene_h: str
     z64player_h: str
     z64ocarina_h: str
+    export_yaml_cpp: str | None
 
     @classmethod
     def load(cls, root: Path) -> "Sources":
@@ -64,6 +65,9 @@ class Sources:
             if not p.exists():
                 sys.exit(f"ERROR: expected source file missing: {p}")
             return cpp.load_source(p)
+
+        def rd_optional(p: Path) -> str | None:
+            return cpp.load_source(p) if p.exists() else None
 
         return cls(
             root=root,
@@ -84,6 +88,7 @@ class Sources:
             z64scene_h=rd(mm / "include" / "z64scene.h"),
             z64player_h=rd(mm / "include" / "z64player.h"),
             z64ocarina_h=rd(mm / "include" / "z64ocarina.h"),
+            export_yaml_cpp=rd_optional(mm / "2s2h" / "Network" / "Archipelago" / "ExportYaml.cpp"),
         )
 
 
@@ -108,6 +113,129 @@ def display_name(enum_key: str) -> str:
 # ---------------------------------------------------------------------------
 # Menu.cpp slider ranges
 # ---------------------------------------------------------------------------
+
+# ExportYaml.cpp writes the player yaml from the in-game menu, and has to know
+# which options Archipelago models as a Range: it writes anything else whose
+# value is 0 or 1 as true/false, which a Range option rejects at generation.
+# Its list is hand-kept, so hold it to Menu.cpp's sliders here.
+#
+# starting_rupees is the one deliberate divergence: 2ship treats it as an on/off
+# checkbox, the AP option is a 0-500 Range (see Options.py's StartingRupees).
+EXPORT_YAML_EXTRA_NUMERIC = {"RO_STARTING_RUPEES"}
+
+# 2ship's on/off enums. AP models those as a Toggle, so they get no choiceTokens
+# entry and their options export as true/false.
+GENERIC_CHOICE_ENUMS = {"RandoOptionGenericOffOn", "RandoOptionGenericNoYes"}
+
+# "random" is a reserved value in an AP yaml, so RO_CLOCK_SHUFFLE_RANDOM is
+# spelled option_randomized. Same exception as test_options.CHOICE_NAME_ALIASES.
+CHOICE_TOKEN_ALIASES = {"RO_CLOCK_SHUFFLE_RANDOM": "randomized"}
+
+
+def expected_choice_tokens(enums: dict[str, list[tuple[str, int]]],
+                           options: dict[str, dict]) -> dict[str, list[str]]:
+    """RO_* -> the AP option_<name> spellings for its values, indexed by ordinal.
+
+    Options.cpp names each option's choice enum through its default value, so
+    the members of that enum are the option's whole set of values. AP derives
+    its option_<name> from the same member names, minus the shared prefix.
+    """
+    member_enum = {member: enum_name for enum_name, members in enums.items() for member, _ in members}
+
+    tokens: dict[str, list[str]] = {}
+    for ro, meta in options.items():
+        enum_name = member_enum.get(meta["default_symbol"])
+        if enum_name is None or enum_name in GENERIC_CHOICE_ENUMS:
+            continue
+
+        members = sorted(enums[enum_name], key=lambda member_value: member_value[1])
+        if [value for _, value in members] != list(range(len(members))):
+            sys.exit(f"ERROR: {enum_name} does not number its members 0..n, so ExportYaml.cpp "
+                     f"cannot index its token list by the option's value.")
+
+        words = [member.split("_") for member, _ in members]
+        shared = 0
+        while all(len(word) > shared + 1 and word[shared] == words[0][shared] for word in words):
+            shared += 1
+        tokens[ro] = [CHOICE_TOKEN_ALIASES.get(member, "_".join(word[shared:]).lower())
+                      for (member, _), word in zip(members, words)]
+    return tokens
+
+
+# Options with no rando-menu widget that ExportYaml.cpp is right to leave at
+# their default. 2ship has no equivalent setting for these two; a player who
+# wants that grass out of the pool excludes the checks, which export through
+# exclude_locations instead.
+EXPORT_YAML_DEFAULTED = {"RO_EXCLUDE_TERMINA_FIELD_GRASS", "RO_EXCLUDE_COW_GROTTO_GRASS"}
+
+
+def check_export_yaml_coverage(export_yaml_cpp: str, menu_cpp: str, options: dict[str, dict]) -> None:
+    """Every option a 2ship player can set has to survive the export.
+
+    An option with no widget in the rando menu always exports whatever its cvar
+    default is, so the player cannot influence it. That is only correct when
+    ExportYaml.cpp derives the value from somewhere else, the way it reads the
+    sword and shield out of the Starting Items list. Anything else silently
+    exports a setting the player never chose.
+    """
+    # Strip string literals first: Menu.cpp's RefreshMetrics list names every
+    # option as "gRando.Options.RO_*", which would look like a widget.
+    widgets = set(re.findall(r"\bRO_\w+\b", re.sub(r'"(?:[^"\\]|\\.)*"', "", menu_cpp)))
+
+    derived = set(re.findall(r"randoSaveOptions\[(RO_\w+)\]\s*=", export_yaml_cpp))
+    block = re.search(r"shuffleWhenNotStartingWith\s*=\s*\{(.*?)\};", export_yaml_cpp, re.S)
+    if block:
+        derived |= set(re.findall(r"\b(RO_\w+)\b(?=\s*,\s*RI_)", block.group(1)))
+
+    unexplained = sorted(set(options) - widgets - derived - EXPORT_YAML_DEFAULTED)
+    if unexplained:
+        sys.exit("ERROR: these options have no widget in Menu.cpp and no derivation in "
+                 f"ExportYaml.cpp, so the export always writes their default: {unexplained}. "
+                 "Either derive the value the way the Starting Items options are derived, or "
+                 "add it to EXPORT_YAML_DEFAULTED with a reason.")
+
+    print(f"[genlogic] checked ExportYaml.cpp covers all {len(options)} options "
+          f"({len(derived)} derived, {len(EXPORT_YAML_DEFAULTED)} deliberately defaulted)")
+
+
+def check_export_yaml_tables(export_yaml_cpp: str | None, slider_ranges: dict[str, tuple],
+                             choice_tokens: dict[str, list[str]]) -> None:
+    if export_yaml_cpp is None:
+        print("[genlogic] WARNING: no Network/Archipelago/ExportYaml.cpp in this checkout; "
+              "skipping the yaml-export option check")
+        return
+
+    m = re.search(r"numericOptions\s*=\s*\{(.*?)\};", export_yaml_cpp, re.S)
+    if not m:
+        sys.exit("ERROR: could not find the numericOptions table in ExportYaml.cpp")
+    declared = set(re.findall(r"RO_\w+", m.group(1)))
+
+    expected = set(slider_ranges) | EXPORT_YAML_EXTRA_NUMERIC
+    if declared != expected:
+        missing = sorted(expected - declared)
+        extra = sorted(declared - expected)
+        sys.exit("ERROR: ExportYaml.cpp's numericOptions is out of sync with Menu.cpp's sliders. "
+                 f"Missing: {missing or 'none'}. Unexpected: {extra or 'none'}. "
+                 "A numeric option left out of that list exports as true/false and breaks generation.")
+
+    m = re.search(r"choiceTokens\s*=\s*\{(.*?)\n\};", export_yaml_cpp, re.S)
+    if not m:
+        sys.exit("ERROR: could not find the choiceTokens table in ExportYaml.cpp")
+    declared_tokens = {ro: re.findall(r'"([^"]*)"', row)
+                       for ro, row in re.findall(r"\{\s*(RO_\w+)\s*,\s*\{([^{}]*)\}", m.group(1))}
+
+    differing = sorted(ro for ro in set(declared_tokens) | set(choice_tokens)
+                       if declared_tokens.get(ro) != choice_tokens.get(ro))
+    if differing:
+        detail = "; ".join(f"{ro} has {declared_tokens.get(ro)}, wants {choice_tokens.get(ro)}"
+                           for ro in differing)
+        sys.exit("ERROR: ExportYaml.cpp's choiceTokens is out of sync with the Types.h choice "
+                 f"enums. {detail}. Upstream reorders and inserts choice members regularly, and a "
+                 "stale list exports a value the apworld does not offer.")
+
+    print(f"[genlogic] checked ExportYaml.cpp against {len(expected)} numeric "
+          f"and {len(choice_tokens)} choice options")
+
 
 def parse_menu_sliders(menu_cpp: str, resolve_constant) -> dict[str, tuple[int | None, int | None, int | None]]:
     """RO_* -> (min, max, default) from Menu.cpp's CVarSliderInt calls.
@@ -616,7 +744,8 @@ def main() -> None:
         if default_val is None:
             print(f"[genlogic] WARNING: cannot resolve default {default!r} for {ro}; using 0")
             default_val = 0
-        options[ro] = {"ap_name": nm.group(1) if nm else ap_name.strip(), "default": default_val}
+        options[ro] = {"ap_name": nm.group(1) if nm else ap_name.strip(), "default": default_val,
+                       "default_symbol": default.strip()}
     print(f"[genlogic] parsed {len(options)} options")
 
     slider_ranges = parse_menu_sliders(src.menu_cpp, resolve_constant)
@@ -624,6 +753,11 @@ def main() -> None:
     if unknown_slider_ros:
         sys.exit(f"ERROR: Menu.cpp sliders reference options missing from Options.cpp: {unknown_slider_ros}")
     print(f"[genlogic] parsed {len(slider_ranges)} option sliders from Menu.cpp")
+
+    check_export_yaml_tables(src.export_yaml_cpp, slider_ranges,
+                             expected_choice_tokens(enums, options))
+    if src.export_yaml_cpp is not None:
+        check_export_yaml_coverage(src.export_yaml_cpp, src.menu_cpp, options)
 
     # Choice enums (Types.h): any enum whose members are all RO_* holds choice
     # ordinals for some option (naming varies: RandoOptionLogic,

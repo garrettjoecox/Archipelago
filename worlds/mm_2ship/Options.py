@@ -382,13 +382,22 @@ class ShuffleButterflies(Toggle):
     default = 0
 
 
-class ShuffleBossRemains(Toggle):
+class ShuffleBossRemains(Choice):
     """
-    Shuffle the four Boss Remains into the item pool. When disabled, each boss
-    still grants its own Remains.
+    Where each temple boss's Remains may be found.
+
+    Vanilla: every boss still rewards its own Remains, so its boss warp always
+    holds them and none are added to the item pool.
+    Anywhere: defeating a boss rewards a shuffled item, and its Remains can be
+    found anywhere in the world, including other players' worlds.
+    Own Dungeon: defeating a boss rewards a shuffled item, and each boss's
+    Remains are confined to locations inside that boss's own temple.
     """
     display_name = "Shuffle Boss Remains"
-    default = 0
+    option_vanilla = 0
+    option_anywhere = 1
+    option_own_dungeon = 2
+    default = 0  # RO_REMAINS_SHUFFLE_VANILLA
 
 
 class ShuffleBossSouls(Toggle):
@@ -556,6 +565,27 @@ class ShuffleSongSun(Toggle):
     """Shuffle the Sun's Song into the item pool."""
     display_name = "Shuffle Sun's Song"
     default = 0
+
+
+class ShuffleSongs(Choice):
+    """
+    Where the songs taught in the world may be found. The extra songs
+    (Sun's Song, Song of Double Time, Inverted Song of Time, Saria's Song) have
+    no location of their own, so they are always shuffled into the item pool
+    like any other item.
+
+    Anywhere: song locations are checks, and their songs can be found anywhere
+    in the world, including other players' worlds.
+    Song Locations: song locations are checks, and their songs are shuffled
+    among those same locations. When another option keeps one of the songs out
+    of the pool, the song location left over holds junk instead.
+    Vanilla: every song stays where it is, and song locations are not checks.
+    """
+    display_name = "Shuffle Songs"
+    option_anywhere = 0
+    option_song_locations = 1
+    option_vanilla = 2
+    default = 0  # RO_SONG_SHUFFLE_ANYWHERE
 
 
 class ShuffleSongTime(Toggle):
@@ -867,6 +897,7 @@ class MM2ShipOptions(PerGameCommonOptions):
     shuffle_hive_drops: ShuffleHiveDrops
     shuffle_wonder_items: ShuffleWonderItems
 
+    shuffle_songs: ShuffleSongs
     shuffle_boss_remains: ShuffleBossRemains
     shuffle_boss_souls: ShuffleBossSouls
     shuffle_enemy_souls: ShuffleEnemySouls
@@ -967,6 +998,7 @@ mm2ship_option_groups = [
         ExcludeTerminaFieldGrass,
         ExcludeCowGrottoGrass,
 
+        ShuffleSongs,
         ShuffleBossRemains,
 
         ShuffleShops,

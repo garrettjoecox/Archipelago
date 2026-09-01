@@ -56,6 +56,7 @@ RO_OPTIONS: dict[str, tuple[str, int]] = {
     "RO_SHUFFLE_SHOPS": ('shuffle_shops', 0),
     "RO_SHUFFLE_SKELETON_KEY": ('shuffle_skeleton_key', 0),
     "RO_SHUFFLE_SNOWBALL_DROPS": ('shuffle_snowball_drops', 0),
+    "RO_SHUFFLE_SONGS": ('shuffle_songs', 0),
     "RO_SHUFFLE_SONG_DOUBLE_TIME": ('shuffle_song_double_time', 0),
     "RO_SHUFFLE_SONG_INVERTED_TIME": ('shuffle_song_inverted_time', 0),
     "RO_SHUFFLE_SONG_SARIA": ('shuffle_song_saria', 0),
@@ -136,4 +137,10 @@ RO_CHOICE_VALUES: dict[str, int] = {
     "RO_LOGIC_NEARLY_NO_LOGIC": 2,
     "RO_LOGIC_NO_LOGIC": 1,
     "RO_LOGIC_VANILLA": 3,
+    "RO_REMAINS_SHUFFLE_ANYWHERE": 1,
+    "RO_REMAINS_SHUFFLE_OWN_DUNGEON": 2,
+    "RO_REMAINS_SHUFFLE_VANILLA": 0,
+    "RO_SONG_SHUFFLE_ANYWHERE": 0,
+    "RO_SONG_SHUFFLE_SONG_LOCATIONS": 1,
+    "RO_SONG_SHUFFLE_VANILLA": 2,
 }

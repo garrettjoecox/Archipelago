@@ -1,9 +1,9 @@
 {
-  "GeneratePools.cpp": "34951dc588be69b4",
-  "StartingItems.cpp": "86ad8752af6da581",
-  "OnFileCreate.cpp": "3da029a4b7224e89",
+  "GeneratePools.cpp": "506409d4a0f452c3",
+  "StartingItems.cpp": "5a057c0db03319b2",
+  "OnFileCreate.cpp": "5d66e652ac923022",
   "ConvertItem.cpp": "a465932a38535a86",
-  "PlacementConstraints.cpp": "8164dd67fd229b33",
+  "PlacementConstraints.cpp": "e4f0756bd1e3a0b8",
   "TimeLogic.cpp": "b5e252f6533bf1b0",
   "Logic.cpp": "80cde9211af74c0c",
   "GlitchlessLogic.cpp": "473190018dc00020",

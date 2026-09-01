@@ -45,7 +45,7 @@ class TestAllShuffles(MM2ShipTestBase):
         "shuffle_tingle_shops": True,
         "shuffle_gold_skulltulas": True,
         "shuffle_owl_statues": True,
-        "shuffle_boss_remains": True,
+        "shuffle_boss_remains": "anywhere",
         "shuffle_boss_souls": True,
         "shuffle_enemy_souls": True,
         "shuffle_ocarina": True,
@@ -326,6 +326,8 @@ class TestOptionMirror(unittest.TestCase):
         "placement_boss_keys": "RO_DUNGEON_ITEM",
         "placement_stray_fairies": "RO_DUNGEON_ITEM",
         "clock_shuffle_progressive": "RO_CLOCK_SHUFFLE",
+        "shuffle_boss_remains": "RO_REMAINS_SHUFFLE",
+        "shuffle_songs": "RO_SONG_SHUFFLE",
     }
 
     # AP choice attr -> C++ member name fragment, where they differ.

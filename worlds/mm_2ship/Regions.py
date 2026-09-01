@@ -65,7 +65,7 @@ def create_regions_and_locations(world: "MM2ShipWorld") -> None:
     # filter, so it can't send a location ID the server has never heard of.
     # Map and compass locations are the exception: starting_maps_and_compasses
     # removes their items from the pool, not the locations themselves.
-    from .PlacementConstraints import vanilla_placed_item_names
+    from .PlacementConstraints import REMAINS_VANILLA, vanilla_placed_item_names
     from .VanillaItems import vanilla_items
 
     # A location keeps its vanilla item for one of two reasons: the placement_*
@@ -73,7 +73,7 @@ def create_regions_and_locations(world: "MM2ShipWorld") -> None:
     # boss remains aren't shuffled. Either way the check still exists and still
     # counts, it just always holds what it holds in the vanilla game.
     vanilla_placed = vanilla_placed_item_names(world)
-    boss_remains_stay = not world.options.shuffle_boss_remains.value
+    boss_remains_stay = world.options.shuffle_boss_remains.value == REMAINS_VANILLA
 
     for loc in Locations:
         if loc == Locations.VICTORY:

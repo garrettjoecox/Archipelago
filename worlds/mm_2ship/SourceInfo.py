@@ -7,9 +7,9 @@
 """Provenance of the generated data: the 2ship checkout it came from."""
 
 # 2ship's CMake project version, which the client reports as gBuildVersion.
-BUILD_VERSION: str = '0.10.0'
+BUILD_VERSION: str = '0.11.0'
 
-SOURCE_COMMIT: str = '969e4f7f1894755139d10314ac94d825777146e1'
+SOURCE_COMMIT: str = '532f41f1076ef6c5cb2ac999172aae38f25f6d8a'
 
 # True when that checkout had uncommitted changes, so the commit alone
 # does not identify the sources this was built from.

@@ -2080,7 +2080,7 @@ REGIONS: dict[str, RegionSpec] = {
         exits=(
         ),
         events=(
-            ('RE_GREAT_BAY_RED_SWITCH_2', lambda s: s.can_use_magic_arrow('ICE'), 'CAN_USE_MAGIC_ARROW(ICE)'),
+            ('RE_GREAT_BAY_RED_SWITCH_2', lambda s: s.can_use_magic_arrow('ICE') and s.rando_inf('RANDO_INF_OBTAINED_SOUL_OF_ENEMY_CHUCHUS'), 'CAN_USE_MAGIC_ARROW(ICE) && Flags_GetRandoInf(RANDO_INF_OBTAINED_SOUL_OF_ENEMY_CHUCHUS)'),
         ),
         stays=(
         ),
@@ -2590,6 +2590,9 @@ REGIONS: dict[str, RegionSpec] = {
             ('RC_IKANA_GRAVEYARD_WONDER_ITEM_07', lambda s: True, 'true'),
             ('RC_IKANA_GRAVEYARD_WONDER_ITEM_08', lambda s: True, 'true'),
             ('RC_IKANA_GRAVEYARD_WONDER_ITEM_09', lambda s: True, 'true'),
+            ('RC_IKANA_GRAVEYARD_WONDER_ITEM_10', lambda s: True, 'true'),
+            ('RC_IKANA_GRAVEYARD_WONDER_ITEM_11', lambda s: True, 'true'),
+            ('RC_IKANA_GRAVEYARD_WONDER_ITEM_12', lambda s: True, 'true'),
             ('RC_ENEMY_DROP_STALCHILD', lambda s: CanKillEnemy(s, 'ACTOR_EN_SKB') and IS_NIGHT(s), 'CanKillEnemy(ACTOR_EN_SKB) && IS_NIGHT()'),
             ('RC_ENEMY_DROP_BAD_BAT', lambda s: CanKillEnemy(s, 'ACTOR_EN_BAT') and IS_DAY(s), 'CanKillEnemy(ACTOR_EN_BAT) && IS_DAY()'),
         ),
@@ -2613,11 +2616,7 @@ REGIONS: dict[str, RegionSpec] = {
         can_stay=True,
         checks=(
             ('RC_IKANA_GRAVEYARD_CAPTAIN_MASK', lambda s: CanKillEnemy(s, 'ACTOR_EN_SKB') and CanKillEnemy(s, 'ACTOR_EN_BSB'), 'CanKillEnemy(ACTOR_EN_SKB) && CanKillEnemy(ACTOR_EN_BSB)'),
-            ('RC_IKANA_GRAVEYARD_WONDER_ITEM_10', lambda s: True, 'true'),
-            ('RC_IKANA_GRAVEYARD_WONDER_ITEM_11', lambda s: True, 'true'),
-            ('RC_IKANA_GRAVEYARD_WONDER_ITEM_12', lambda s: True, 'true'),
             ('RC_ENEMY_DROP_STALCHILD', lambda s: CanKillEnemy(s, 'ACTOR_EN_SKB'), 'CanKillEnemy(ACTOR_EN_SKB)'),
-            ('RC_ENEMY_DROP_BAD_BAT', lambda s: CanKillEnemy(s, 'ACTOR_EN_BAT') and IS_DAY(s), 'CanKillEnemy(ACTOR_EN_BAT) && IS_DAY()'),
             ('RC_ENEMY_DROP_CAPTAIN_KEETA', lambda s: CanKillEnemy(s, 'ACTOR_EN_SKB') and CanKillEnemy(s, 'ACTOR_EN_BSB'), 'CanKillEnemy(ACTOR_EN_SKB) && CanKillEnemy(ACTOR_EN_BSB)'),
         ),
         connections=(
@@ -2929,7 +2928,7 @@ REGIONS: dict[str, RegionSpec] = {
             ('RR_MOON_DEKU_TRIAL', ('MOON_DEKU_TRIAL', 0), lambda s: ((s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_20_MASKS) and (s.moon_mask_count() >= 2)) or ((s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_REMAINS) and s.quest_item('QUEST_REMAINS_ODOLWA')) or ((s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_FORMS) and CAN_BE_DEKU(s)) or (s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_OPEN) or ((s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_VANILLA) and (s.moon_mask_count() >= 1)), '(RANDO_SAVE_OPTIONS[RO_ACCESS_TRIALS] == RO_ACCESS_TRIALS_20_MASKS && MoonMaskCount() >= 2) || (RANDO_SAVE_OPTIONS[RO_ACCESS_TRIALS] == RO_ACCESS_TRIALS_REMA...'),
             ('RR_MOON_GORON_TRIAL', ('MOON_GORON_TRIAL', 0), lambda s: ((s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_20_MASKS) and (s.moon_mask_count() >= 6)) or ((s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_REMAINS) and s.quest_item('QUEST_REMAINS_GOHT')) or ((s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_FORMS) and CAN_BE_GORON(s)) or (s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_OPEN) or ((s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_VANILLA) and (s.moon_mask_count() >= 2)), '(RANDO_SAVE_OPTIONS[RO_ACCESS_TRIALS] == RO_ACCESS_TRIALS_20_MASKS && MoonMaskCount() >= 6) || (RANDO_SAVE_OPTIONS[RO_ACCESS_TRIALS] == RO_ACCESS_TRIALS_REMA...'),
             ('RR_MOON_ZORA_TRIAL', ('MOON_ZORA_TRIAL', 0), lambda s: ((s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_20_MASKS) and (s.moon_mask_count() >= 12)) or ((s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_REMAINS) and s.quest_item('QUEST_REMAINS_GYORG')) or ((s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_FORMS) and CAN_BE_ZORA(s)) or (s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_OPEN) or ((s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_VANILLA) and (s.moon_mask_count() >= 3)), '(RANDO_SAVE_OPTIONS[RO_ACCESS_TRIALS] == RO_ACCESS_TRIALS_20_MASKS && MoonMaskCount() >= 12) || (RANDO_SAVE_OPTIONS[RO_ACCESS_TRIALS] == RO_ACCESS_TRIALS_REM...'),
-            ('RR_MOON_LINK_TRIAL', ('MOON_LINK_TRIAL', 0), lambda s: ((s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_20_MASKS) and (s.moon_mask_count() >= 20)) or ((s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_REMAINS) and s.quest_item('QUEST_REMAINS_TWINMOLD')) or (s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_FORMS) or (s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_OPEN) or ((s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_VANILLA) and (s.moon_mask_count() >= 4)), '(RANDO_SAVE_OPTIONS[RO_ACCESS_TRIALS] == RO_ACCESS_TRIALS_20_MASKS && MoonMaskCount() >= 20) || (RANDO_SAVE_OPTIONS[RO_ACCESS_TRIALS] == RO_ACCESS_TRIALS_REM...'),
+            ('RR_MOON_LINK_TRIAL_ENTRANCE', ('MOON_LINK_TRIAL', 0), lambda s: ((s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_20_MASKS) and (s.moon_mask_count() >= 20)) or ((s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_REMAINS) and s.quest_item('QUEST_REMAINS_TWINMOLD')) or (s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_FORMS) or (s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_OPEN) or ((s.opt('RO_ACCESS_TRIALS') == RO_ACCESS_TRIALS_VANILLA) and (s.moon_mask_count() >= 4)), '(RANDO_SAVE_OPTIONS[RO_ACCESS_TRIALS] == RO_ACCESS_TRIALS_20_MASKS && MoonMaskCount() >= 20) || (RANDO_SAVE_OPTIONS[RO_ACCESS_TRIALS] == RO_ACCESS_TRIALS_REM...'),
             ('RR_MOON_MAJORAS_LAIR', ('MAJORAS_LAIR', 0), lambda s: (s.remains_count() >= s.opt('RO_ACCESS_MAJORA_REMAINS_COUNT')) and (s.moon_mask_count() >= s.opt('RO_ACCESS_MAJORA_MASKS_COUNT')), '(RemainsCount() >= RANDO_SAVE_OPTIONS[RO_ACCESS_MAJORA_REMAINS_COUNT]) && (MoonMaskCount() >= RANDO_SAVE_OPTIONS[RO_ACCESS_MAJORA_MASKS_COUNT])'),
         ),
         events=(
@@ -2986,12 +2985,10 @@ REGIONS: dict[str, RegionSpec] = {
         stays=(
         ),
     ),
-    'RR_MOON_LINK_TRIAL': RegionSpec(
+    'RR_MOON_LINK_TRIAL_ENTRANCE': RegionSpec(
         scene='SCENE_LAST_LINK',
         can_stay=True,
         checks=(
-            ('RC_MOON_TRIAL_LINK_GARO_MASTER_CHEST', lambda s: s.has_item('ITEM_HOOKSHOT'), 'HAS_ITEM(ITEM_HOOKSHOT)'),
-            ('RC_MOON_TRIAL_LINK_IRON_KNUCKLE_CHEST', lambda s: s.has_item('ITEM_HOOKSHOT'), 'HAS_ITEM(ITEM_HOOKSHOT)'),
             ('RC_MOON_TRIAL_LINK_POT_01', lambda s: True, 'true'),
             ('RC_MOON_TRIAL_LINK_POT_02', lambda s: True, 'true'),
             ('RC_MOON_TRIAL_LINK_POT_03', lambda s: True, 'true'),
@@ -3000,17 +2997,66 @@ REGIONS: dict[str, RegionSpec] = {
             ('RC_MOON_TRIAL_LINK_POT_06', lambda s: True, 'true'),
             ('RC_MOON_TRIAL_LINK_POT_07', lambda s: True, 'true'),
             ('RC_MOON_TRIAL_LINK_POT_08', lambda s: True, 'true'),
-            ('RC_MOON_TRIAL_LINK_PIECE_OF_HEART', lambda s: s.has_item('ITEM_HOOKSHOT') and s.has_item('ITEM_BOMBCHU') and s.has_item('ITEM_BOW'), 'HAS_ITEM(ITEM_HOOKSHOT) && HAS_ITEM(ITEM_BOMBCHU) && HAS_ITEM(ITEM_BOW)'),
-            ('RC_ENEMY_DROP_IRON_KNUCKLE', lambda s: CanKillEnemy(s, 'ACTOR_EN_IK'), 'CanKillEnemy(ACTOR_EN_IK)'),
-            ('RC_ENEMY_DROP_GARO_MASTER', lambda s: CanKillEnemy(s, 'ACTOR_EN_JSO2'), 'CanKillEnemy(ACTOR_EN_JSO2)'),
-            ('RC_ENEMY_DROP_WIZROBE', lambda s: CanKillEnemy(s, 'ACTOR_EN_WIZ'), 'CanKillEnemy(ACTOR_EN_WIZ)'),
             ('RC_ENEMY_DROP_DINOLFOS', lambda s: CanKillEnemy(s, 'ACTOR_EN_DINOFOS'), 'CanKillEnemy(ACTOR_EN_DINOFOS)'),
         ),
         connections=(
+            ('RR_MOON_LINK_TRIAL_GARO_ROOM', lambda s: CanKillEnemy(s, 'ACTOR_EN_DINOFOS'), 'CanKillEnemy(ACTOR_EN_DINOFOS)'),
         ),
         exits=(
             ('RR_MOON', ('THE_MOON', 0), lambda s: True, 'true'),
-            ('RR_MOON', ('THE_MOON', 0), lambda s: s.has_item('ITEM_HOOKSHOT') and s.has_item('ITEM_BOMBCHU') and s.has_item('ITEM_BOW'), 'HAS_ITEM(ITEM_HOOKSHOT) && HAS_ITEM(ITEM_BOMBCHU) && HAS_ITEM(ITEM_BOW)'),
+        ),
+        events=(
+        ),
+        stays=(
+        ),
+    ),
+    'RR_MOON_LINK_TRIAL_FINAL_ROOM': RegionSpec(
+        scene='SCENE_LAST_LINK',
+        can_stay=True,
+        checks=(
+            ('RC_MOON_TRIAL_LINK_PIECE_OF_HEART', lambda s: True, 'true'),
+        ),
+        connections=(
+            ('RR_MOON_LINK_TRIAL_GARO_ROOM', lambda s: True, 'true'),
+        ),
+        exits=(
+            ('RR_MOON', ('THE_MOON', 0), lambda s: s.has_item('ITEM_BOMBCHU') and s.can_use_magic_arrow('FIRE'), 'HAS_ITEM(ITEM_BOMBCHU) && CAN_USE_MAGIC_ARROW(FIRE)'),
+        ),
+        events=(
+        ),
+        stays=(
+        ),
+    ),
+    'RR_MOON_LINK_TRIAL_GARO_ROOM': RegionSpec(
+        scene='SCENE_LAST_LINK',
+        can_stay=True,
+        checks=(
+            ('RC_ENEMY_DROP_GARO_MASTER', lambda s: CanKillEnemy(s, 'ACTOR_EN_JSO2'), 'CanKillEnemy(ACTOR_EN_JSO2)'),
+            ('RC_MOON_TRIAL_LINK_GARO_MASTER_CHEST', lambda s: s.has_item('ITEM_HOOKSHOT'), 'HAS_ITEM(ITEM_HOOKSHOT)'),
+        ),
+        connections=(
+            ('RR_MOON_LINK_TRIAL_ENTRANCE', lambda s: CanKillEnemy(s, 'ACTOR_EN_DINOFOS'), 'CanKillEnemy(ACTOR_EN_DINOFOS)'),
+            ('RR_MOON_LINK_TRIAL_KNUCKLE_ROOM', lambda s: CanKillEnemy(s, 'ACTOR_EN_JSO2') and s.has_item('ITEM_HOOKSHOT'), 'CanKillEnemy(ACTOR_EN_JSO2) && HAS_ITEM(ITEM_HOOKSHOT)'),
+        ),
+        exits=(
+        ),
+        events=(
+        ),
+        stays=(
+        ),
+    ),
+    'RR_MOON_LINK_TRIAL_KNUCKLE_ROOM': RegionSpec(
+        scene='SCENE_LAST_LINK',
+        can_stay=True,
+        checks=(
+            ('RC_MOON_TRIAL_LINK_IRON_KNUCKLE_CHEST', lambda s: CanKillEnemy(s, 'ACTOR_EN_IK'), 'CanKillEnemy(ACTOR_EN_IK)'),
+            ('RC_ENEMY_DROP_IRON_KNUCKLE', lambda s: CanKillEnemy(s, 'ACTOR_EN_IK'), 'CanKillEnemy(ACTOR_EN_IK)'),
+        ),
+        connections=(
+            ('RR_MOON_LINK_TRIAL_FINAL_ROOM', lambda s: CanKillEnemy(s, 'ACTOR_EN_IK') and s.has_item('ITEM_BOMBCHU') and s.has_item('ITEM_BOW'), 'CanKillEnemy(ACTOR_EN_IK) && HAS_ITEM(ITEM_BOMBCHU) && HAS_ITEM(ITEM_BOW)'),
+            ('RR_MOON_LINK_TRIAL_GARO_ROOM', lambda s: CanKillEnemy(s, 'ACTOR_EN_IK'), 'CanKillEnemy(ACTOR_EN_IK)'),
+        ),
+        exits=(
         ),
         events=(
         ),
@@ -5124,15 +5170,15 @@ REGIONS: dict[str, RegionSpec] = {
         scene='SCENE_HAKUGIN',
         can_stay=True,
         checks=(
-            ('RC_SNOWHEAD_TEMPLE_ICICLE_ROOM_ALCOVE_CHEST', lambda s: s.has_item('ITEM_LENS_OF_TRUTH') and s.has_magic(), '(HAS_ITEM(ITEM_LENS_OF_TRUTH) && HAS_MAGIC)'),
-            ('RC_SNOWHEAD_TEMPLE_ICICLE_ROOM_CHEST', lambda s: (CAN_USE_EXPLOSIVE(s) and s.has_item('ITEM_HOOKSHOT')) or CAN_BE_GORON(s), '((CAN_USE_EXPLOSIVE && HAS_ITEM(ITEM_HOOKSHOT)) || CAN_BE_GORON)'),
-            ('RC_SNOWHEAD_TEMPLE_ICICLE_ROOM_FREESTANDING_RUPEE_01', lambda s: s.can_use_magic_arrow('FIRE'), 'CAN_USE_MAGIC_ARROW(FIRE)'),
-            ('RC_SNOWHEAD_TEMPLE_ICICLE_ROOM_FREESTANDING_RUPEE_02', lambda s: s.can_use_magic_arrow('FIRE'), 'CAN_USE_MAGIC_ARROW(FIRE)'),
-            ('RC_SNOWHEAD_TEMPLE_ICICLE_ROOM_FREESTANDING_RUPEE_03', lambda s: s.can_use_magic_arrow('FIRE'), 'CAN_USE_MAGIC_ARROW(FIRE)'),
-            ('RC_SNOWHEAD_TEMPLE_ICICLE_ROOM_LARGE_SNOWBALL_01', lambda s: CanKillEnemy(s, 'ACTOR_OBJ_SNOWBALL'), 'CanKillEnemy(ACTOR_OBJ_SNOWBALL)'),
-            ('RC_SNOWHEAD_TEMPLE_ICICLE_ROOM_SMALL_SNOWBALL_01', lambda s: True, 'true'),
-            ('RC_SNOWHEAD_TEMPLE_ICICLE_ROOM_SMALL_SNOWBALL_02', lambda s: True, 'true'),
-            ('RC_SNOWHEAD_TEMPLE_ICICLE_ROOM_SMALL_SNOWBALL_03', lambda s: True, 'true'),
+            ('RC_SNOWHEAD_TEMPLE_ICICLE_ROOM_ALCOVE_CHEST', lambda s: s.has_item('ITEM_LENS_OF_TRUTH') and s.has_magic() and s.has_item('ITEM_BOW'), '(HAS_ITEM(ITEM_LENS_OF_TRUTH) && HAS_MAGIC && HAS_ITEM(ITEM_BOW))'),
+            ('RC_SNOWHEAD_TEMPLE_ICICLE_ROOM_CHEST', lambda s: ((CAN_USE_EXPLOSIVE(s) and s.has_item('ITEM_HOOKSHOT')) or s.has_item('ITEM_BOW') or CAN_BE_ZORA(s)) and CanKillEnemy(s, 'ACTOR_OBJ_SNOWBALL'), '((CAN_USE_EXPLOSIVE && HAS_ITEM(ITEM_HOOKSHOT)) || HAS_ITEM(ITEM_BOW) || CAN_BE_ZORA) && CanKillEnemy(ACTOR_OBJ_SNOWBALL)'),
+            ('RC_SNOWHEAD_TEMPLE_ICICLE_ROOM_FREESTANDING_RUPEE_01', lambda s: s.has_item('ITEM_BOW'), 'HAS_ITEM(ITEM_BOW)'),
+            ('RC_SNOWHEAD_TEMPLE_ICICLE_ROOM_FREESTANDING_RUPEE_02', lambda s: s.has_item('ITEM_BOW'), 'HAS_ITEM(ITEM_BOW)'),
+            ('RC_SNOWHEAD_TEMPLE_ICICLE_ROOM_FREESTANDING_RUPEE_03', lambda s: s.has_item('ITEM_BOW'), 'HAS_ITEM(ITEM_BOW)'),
+            ('RC_SNOWHEAD_TEMPLE_ICICLE_ROOM_LARGE_SNOWBALL_01', lambda s: ((CAN_USE_EXPLOSIVE(s) and s.has_item('ITEM_HOOKSHOT')) or s.has_item('ITEM_BOW') or CAN_BE_ZORA(s)) and CanKillEnemy(s, 'ACTOR_OBJ_SNOWBALL'), '((CAN_USE_EXPLOSIVE && HAS_ITEM(ITEM_HOOKSHOT)) || HAS_ITEM(ITEM_BOW) || CAN_BE_ZORA) && CanKillEnemy(ACTOR_OBJ_SNOWBALL)'),
+            ('RC_SNOWHEAD_TEMPLE_ICICLE_ROOM_SMALL_SNOWBALL_01', lambda s: (CAN_USE_EXPLOSIVE(s) and s.has_item('ITEM_HOOKSHOT')) or s.has_item('ITEM_BOW') or CAN_BE_ZORA(s), '((CAN_USE_EXPLOSIVE && HAS_ITEM(ITEM_HOOKSHOT)) || HAS_ITEM(ITEM_BOW) || CAN_BE_ZORA)'),
+            ('RC_SNOWHEAD_TEMPLE_ICICLE_ROOM_SMALL_SNOWBALL_02', lambda s: (CAN_USE_EXPLOSIVE(s) and s.has_item('ITEM_HOOKSHOT')) or s.has_item('ITEM_BOW') or CAN_BE_ZORA(s), '((CAN_USE_EXPLOSIVE && HAS_ITEM(ITEM_HOOKSHOT)) || HAS_ITEM(ITEM_BOW) || CAN_BE_ZORA)'),
+            ('RC_SNOWHEAD_TEMPLE_ICICLE_ROOM_SMALL_SNOWBALL_03', lambda s: (CAN_USE_EXPLOSIVE(s) and s.has_item('ITEM_HOOKSHOT')) or s.has_item('ITEM_BOW') or CAN_BE_ZORA(s), '((CAN_USE_EXPLOSIVE && HAS_ITEM(ITEM_HOOKSHOT)) || HAS_ITEM(ITEM_BOW) || CAN_BE_ZORA)'),
             ('RC_SNOWHEAD_TEMPLE_ICICLE_ROOM_SMALL_SNOWBALL_04', lambda s: True, 'true'),
             ('RC_SNOWHEAD_TEMPLE_ICICLE_ROOM_SMALL_SNOWBALL_05', lambda s: True, 'true'),
         ),
@@ -6591,7 +6637,7 @@ REGIONS: dict[str, RegionSpec] = {
             ('RC_SWORDSMAN_SCHOOL_POT_03', lambda s: CAN_USE_HUMAN_SWORD(s) and s.time_after(TIME_NIGHT3_AM_12_00), 'CAN_USE_HUMAN_SWORD && AFTER(TIME_NIGHT3_AM_12_00)'),
             ('RC_SWORDSMAN_SCHOOL_POT_04', lambda s: CAN_USE_HUMAN_SWORD(s) and s.time_after(TIME_NIGHT3_AM_12_00), 'CAN_USE_HUMAN_SWORD && AFTER(TIME_NIGHT3_AM_12_00)'),
             ('RC_SWORDSMAN_SCHOOL_POT_05', lambda s: CAN_USE_HUMAN_SWORD(s) and s.time_after(TIME_NIGHT3_AM_12_00), 'CAN_USE_HUMAN_SWORD && AFTER(TIME_NIGHT3_AM_12_00)'),
-            ('RC_SWORDSMAN_SCHOOL_WONDER_ITEM', lambda s: (CAN_BE_GORON(s) or CAN_BE_ZORA(s) or CAN_BE_DEKU(s) or CAN_USE_SWORD(s) or s.has_item('ITEM_DEKU_STICK') or s.has_item('ITEM_HOOKSHOT') or s.has_item('ITEM_BOW')) and s.time_before(TIME_NIGHT3_PM_11_00), '(CAN_BE_GORON || CAN_BE_ZORA || CAN_BE_DEKU || CAN_USE_SWORD || HAS_ITEM(ITEM_DEKU_STICK) || HAS_ITEM(ITEM_HOOKSHOT) || HAS_ITEM(ITEM_BOW)) && BEFORE(TIME_NI...'),
+            ('RC_SWORDSMAN_SCHOOL_WONDER_ITEM', lambda s: (CAN_BE_GORON(s) or CAN_BE_ZORA(s) or CAN_BE_DEKU(s) or CAN_USE_HUMAN_SWORD(s) or CAN_BE_DEITY(s)) and s.time_before(TIME_NIGHT3_PM_11_00), '(CAN_BE_GORON || CAN_BE_ZORA || CAN_BE_DEKU || CAN_USE_HUMAN_SWORD || CAN_BE_DEITY) && BEFORE(TIME_NIGHT3_PM_11_00)'),
         ),
         connections=(
         ),
@@ -7929,7 +7975,7 @@ REGIONS: dict[str, RegionSpec] = {
             ('RC_ENEMY_DROP_LIKE_LIKE', lambda s: CanKillEnemy(s, 'ACTOR_EN_RR'), 'CanKillEnemy(ACTOR_EN_RR)'),
         ),
         connections=(
-            ('RR_ZORA_CAPE_BEFORE_GREAT_BAY_TEMPLE', lambda s: CAN_BE_ZORA(s), 'CAN_BE_ZORA'),
+            ('RR_ZORA_CAPE_BEFORE_GREAT_BAY_TEMPLE', lambda s: CAN_BE_ZORA(s) and s.ability('SWIM'), 'CAN_BE_ZORA && CAN_USE_ABILITY(SWIM)'),
             ('RR_ZORA_CAPE_OUTSIDE_FAIRY_FOUNTAIN', lambda s: s.has_item('ITEM_HOOKSHOT'), 'HAS_ITEM(ITEM_HOOKSHOT)'),
         ),
         exits=(
@@ -7954,7 +8000,7 @@ REGIONS: dict[str, RegionSpec] = {
             ('RC_ZORA_CAPE_OWL_STATUE', lambda s: CAN_USE_SWORD(s), 'CAN_USE_SWORD'),
         ),
         connections=(
-            ('RR_ZORA_CAPE', lambda s: CAN_BE_ZORA(s), 'CAN_BE_ZORA'),
+            ('RR_ZORA_CAPE', lambda s: CAN_BE_ZORA(s) and s.ability('SWIM'), 'CAN_BE_ZORA && CAN_USE_ABILITY(SWIM)'),
         ),
         exits=(
             ('RR_ZORA_HALL', ('ZORA_HALL', 1), lambda s: True, 'true'),

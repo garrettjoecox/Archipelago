@@ -645,10 +645,10 @@ QUEST_TO_OCARINA = {
 
 # ---- dungeons ------------------------------------------------------------
 DUNGEON_ITEMS = {
-    'GREAT_BAY_TEMPLE': {'small_key': 'Great Bay Small Key', 'boss_key': 'Great Bay Boss Key', 'stray_fairy': 'Great Bay Stray Fairy'},
-    'SNOWHEAD_TEMPLE': {'small_key': 'Snowhead Small Key', 'boss_key': 'Snowhead Boss Key', 'stray_fairy': 'Snowhead Stray Fairy'},
-    'STONE_TOWER_TEMPLE': {'small_key': 'Stone Tower Small Key', 'boss_key': 'Stone Tower Boss Key', 'stray_fairy': 'Stone Tower Stray Fairy'},
-    'WOODFALL_TEMPLE': {'small_key': 'Woodfall Small Key', 'boss_key': 'Woodfall Boss Key', 'stray_fairy': 'Woodfall Stray Fairy'},
+    'GREAT_BAY_TEMPLE': {'small_key': 'Great Bay Small Key', 'boss_key': 'Great Bay Boss Key', 'stray_fairy': 'Great Bay Stray Fairy', 'remains': "Gyorg's Remains"},
+    'SNOWHEAD_TEMPLE': {'small_key': 'Snowhead Small Key', 'boss_key': 'Snowhead Boss Key', 'stray_fairy': 'Snowhead Stray Fairy', 'remains': "Goht's Remains"},
+    'STONE_TOWER_TEMPLE': {'small_key': 'Stone Tower Small Key', 'boss_key': 'Stone Tower Boss Key', 'stray_fairy': 'Stone Tower Stray Fairy', 'remains': "Twinmold's Remains"},
+    'WOODFALL_TEMPLE': {'small_key': 'Woodfall Small Key', 'boss_key': 'Woodfall Boss Key', 'stray_fairy': 'Woodfall Stray Fairy', 'remains': "Odolwa's Remains"},
 }
 
 # Masks counted by MoonMaskCount() (ITEM_MASK_TRUTH..ITEM_MASK_GIANT)
